@@ -1,0 +1,5 @@
+application:
+  gin_mode: "debug"
+  http_host: "localhost:8080"
+  grpc_host: "localhost:5000"
+  domain: ""

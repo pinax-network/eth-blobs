@@ -1,0 +1,36 @@
+version: '3'
+
+tasks:
+  build:
+    desc: "Builds the Go binary. You can pass through arguments to the Go compiler by appending --, for example: 'task build -- -tags my_feature'"
+    cmds:
+      - go build -v {{.CLI_ARGS}} --ldflags='-X "main.version={{.VERSION}}" -X "main.commit={{.COMMIT}}"'
+    vars:
+      COMMIT:
+        sh: git log -n 1 --pretty=format:"%H"
+      VERSION:
+        sh: if [[ -e "./version" ]]; then cat "./version"; else echo "dev"; fi
+
+  run:format:
+    desc: "Runs Golang's code formatter gofmt"
+    cmds:
+      - gofmt -s -w .
+
+  run:lint:
+    desc: "Runs Golang's linter"
+    cmds:
+      - golangci-lint run ./...
+
+  start:service:
+    desc: "Starts a local instance of the service. You can pass through arguments to the API by appending --, for example 'task start -- -debug'"
+    cmds:
+      - ./golang-service-template {{.CLI_ARGS}}
+
+  test:format:
+    desc: "Checks Golang's code formatter"
+    silent: true
+    cmds:
+      - |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; 
+          then exit 1; 
+        fi

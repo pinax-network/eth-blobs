@@ -1,0 +1,49 @@
+# Workflow to build the application and run endpoint tests
+name: Build & Tests
+
+on:
+  push:
+    branches: [ develop* ]
+  pull_request:
+    branches: [ develop*,main ]
+
+jobs:
+
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        go-version: [ 1.19.x, 1.20.x ]
+        os: [ ubuntu-latest ]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup SSH Keys and known_hosts
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add - <<< "${{ secrets.SSH_EOSN_DEPLOY_KEY }}"
+          git config --global url."git@github.com:pinax-network".insteadOf "https://github.com/pinax-network"
+          git config --global url."git@github.com:pomelo-io".insteadOf "https://github.com/pomelo-io"
+          git config --global url."git@github.com:eosnationftw".insteadOf "https://github.com/eosnationftw"    
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+          check-latest: true
+          cache: true
+          cache-dependency-path: "**go.sum"
+
+      - name: Install Task
+        uses: arduino/setup-task@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        env:
+          GOPRIVATE: github.com/pinax-network,github.com/eosnationftw,github.com/pomelo-io
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          task build
