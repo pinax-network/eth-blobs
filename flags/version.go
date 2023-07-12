@@ -1,7 +1,7 @@
 package flags
 
 // version will be injected using -ldflags in the build process
-var version = "dev"
+var version = ""
 
 // commit will be injected using -ldflags in the build process
 var commit = ""
