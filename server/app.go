@@ -20,7 +20,7 @@ func Initialize() *App {
 	configPtr := flag.String("config", "./config.yaml", "config file path")
 	flag.Parse()
 
-	err := log.InitializeLogger(*debugPtr)
+	err := log.InitializeGlobalLogger(*debugPtr)
 	log.FatalIfError("failed to initialize logger", err)
 
 	var AppConfig config.Config
