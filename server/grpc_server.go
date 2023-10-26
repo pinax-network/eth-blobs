@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/reflection"
 	"net"
 	"os"
 	"os/signal"
@@ -58,6 +59,7 @@ func (s *GrpcServer) Initialize() {
 
 	// init endpoints
 	grpc_health_v1.RegisterHealthServer(s.Server, health.NewServer())
+	reflection.Register(s.Server)
 }
 
 func (s *GrpcServer) Run(wg *sync.WaitGroup) {
