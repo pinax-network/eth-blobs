@@ -1,19 +1,26 @@
 version: '3'
 
 env:
+  # PACKAGE contains the module name from the go.mod file.
   PACKAGE:
     sh: grep 'module' ./go.mod | awk '{print $2}'
+  # TAG checks if the current commit is tagged and returns it if that's the case. We use this to set the version flag
+  # in the build task (we assume tags are always version tags). If the current commit is not tagged, TAG will be set
+  # to 'untagged'.
+  TAG:
+    sh: git describe --tags --exact-match || echo 'untagged'
+  # COMMIT contains the full commit hash of the current commit
+  COMMIT:
+    sh: git log -n 1 --pretty=format:"%H"
+  # SHORT_COMMIT contains the abbreviated commit hash of the current commit
+  SHORT_COMMIT:
+    sh: git log -1 --pretty=format:%h
 
 tasks:
   build:
     desc: "Builds the Go binary. You can pass through arguments to the Go compiler by appending --, for example: 'task build -- -tags my_feature'"
     cmds:
-      - go build -v {{.CLI_ARGS}} --ldflags='-X "{{.PACKAGE}}/flags.version={{.VERSION}}" -X "{{.PACKAGE}}/flags.commit={{.COMMIT}}"'
-    vars:
-      COMMIT:
-        sh: git log -n 1 --pretty=format:"%H"
-      VERSION:
-        sh: if [[ -e "./version" ]]; then cat "./version"; else echo "dev"; fi
+      - go build -v {{.CLI_ARGS}} --ldflags='-X "{{.PACKAGE}}/flags.version={{.TAG}}" -X "{{.PACKAGE}}/flags.commit={{.SHORT_COMMIT}}"'
 
   run:format:
     desc: "Runs Golang's code formatter gofmt"
