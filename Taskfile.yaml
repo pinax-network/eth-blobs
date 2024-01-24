@@ -15,12 +15,54 @@ env:
   # SHORT_COMMIT contains the abbreviated commit hash of the current commit
   SHORT_COMMIT:
     sh: git log -1 --pretty=format:%h
+  # REPOSITORY contains the Github repository name parsed from the remote url
+  REPOSITORY:
+    sh: basename -s .git $(git remote get-url origin)
+  # ORGANISATION contains the Github organisation parsed from the remote url
+  ORGANISATION:
+    sh: git remote get-url origin | sed -E 's/(.*github\.com[:\/])([^\/]+)\/([^\/]+)(\.git)?/\2/'
+  # REGISTRY is set to the container registry to be used to upload Docker images
+  REGISTRY: "ghcr.io"
 
 tasks:
   build:
-    desc: "Builds the Go binary. You can pass through arguments to the Go compiler by appending --, for example: 'task build -- -tags my_feature'"
+    desc: "Builds the Go binary. You can pass through arguments to the Go compiler by appending --, for example: 'task build -- -tags my_feature'. To set compiler flags use the BUILD_FLAGS environment variable."
     cmds:
-      - go build -v {{.CLI_ARGS}} --ldflags='-X "{{.PACKAGE}}/flags.version={{.TAG}}" -X "{{.PACKAGE}}/flags.commit={{.SHORT_COMMIT}}"'
+      - |
+        {{.BUILD_FLAGS}} go build -v {{.CLI_ARGS}} --ldflags='-X "{{.PACKAGE}}/flags.version={{.TAG}}" -X "{{.PACKAGE}}/flags.commit={{.SHORT_COMMIT}}"'
+
+  build:docker:
+    desc: "Builds the Docker image"
+    silent: true
+    cmds:
+      - task: build
+        vars:
+          BUILD_FLAGS: 'GOOS=linux GOARCH=amd64 CGO_ENABLED=0'
+      - |
+        REPO="{{.REGISTRY}}/{{.ORGANISATION}}/{{.REPOSITORY}}:"
+        VERSION={{.SHORT_COMMIT}}
+        LATEST=""
+        BUILD_TIMESTAMP=$( date '+%F_%H:%M:%S' )
+        
+        # in case we are on a tagged version, we use this as version string (instead of the short commit) and we also
+        # push that docker image as new 'latest'
+        if [[ {{.TAG}} == v* ]]; then
+          VERSION="{{.TAG}}"
+          LATEST="${REPO}latest"
+        fi
+        
+        DOCKER_TAG="$REPO$VERSION"
+        
+        if [ -z "$LATEST" ]; then
+          echo "running: docker build -t \"$DOCKER_TAG\" --build-arg VERSION=\"$VERSION\" --build-arg BUILD_TIMESTAMP=\"$BUILD_TIMESTAMP\" ."
+          docker build -t "$DOCKER_TAG" --build-arg VERSION="$VERSION" --build-arg BUILD_TIMESTAMP="$BUILD_TIMESTAMP" . 
+          docker push $DOCKER_TAG
+        else
+          echo "running: docker build -t \"$DOCKER_TAG\" -t \"$LATEST\" --build-arg VERSION=\"$VERSION\" --build-arg BUILD_TIMESTAMP=\"$BUILD_TIMESTAMP\" ."
+          docker build -t "$DOCKER_TAG" -t "$LATEST" --build-arg VERSION="$VERSION" --build-arg BUILD_TIMESTAMP="$BUILD_TIMESTAMP" . 
+          docker push $DOCKER_TAG
+          docker push $LATEST
+        fi
 
   run:format:
     desc: "Runs Golang's code formatter gofmt"
