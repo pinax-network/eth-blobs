@@ -8,7 +8,7 @@ env:
   # in the build task (we assume tags are always version tags). If the current commit is not tagged, TAG will be set
   # to 'untagged'.
   TAG:
-    sh: git describe --tags --exact-match || echo 'untagged'
+    sh: git describe --tags --exact-match 2>/dev/null || echo 'untagged'
   # COMMIT contains the full commit hash of the current commit
   COMMIT:
     sh: git log -n 1 --pretty=format:"%H"
