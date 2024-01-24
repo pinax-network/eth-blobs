@@ -25,6 +25,20 @@ env:
   REGISTRY: "ghcr.io"
 
 tasks:
+
+  print:env:
+    desc: "Print all environment variables set within this Taskfile."
+    silent: true
+    cmds:
+      - |
+        echo -e "PACKAGE: \\t$PACKAGE"
+        echo -e "TAG: \\t\\t$TAG"
+        echo -e "SHORT_COMMIT: \\t$SHORT_COMMIT"
+        echo -e "COMMIT: \\t$COMMIT"
+        echo -e "REPOSITORY: \\t$REPOSITORY"
+        echo -e "ORGANISATION: \\t$ORGANISATION"
+        echo -e "REGISTRY: \\t$REGISTRY"
+
   build:
     desc: "Builds the Go binary. You can pass through arguments to the Go compiler by appending --, for example: 'task build -- -tags my_feature'. To set compiler flags use the BUILD_FLAGS environment variable."
     cmds:
@@ -37,7 +51,7 @@ tasks:
     cmds:
       - task: build
         vars:
-          BUILD_FLAGS: 'GOOS=linux GOARCH=amd64 CGO_ENABLED=0'
+          BUILD_FLAGS: 'GOOS=linux GOARCH=amd64'
       - |
         REPO="{{.REGISTRY}}/{{.ORGANISATION}}/{{.REPOSITORY}}:"
         VERSION={{.SHORT_COMMIT}}
@@ -75,7 +89,7 @@ tasks:
       - golangci-lint run ./...
 
   start:service:
-    desc: "Starts a local instance of the service. You can pass through arguments to the API by appending --, for example 'task start -- -debug'"
+    desc: "Starts a local instance of the service. You can pass through arguments to the binary by appending --, for example 'task start -- -debug'"
     cmds:
       - ./{{.PACKAGE}} {{.CLI_ARGS}}
 
