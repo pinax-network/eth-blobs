@@ -26,6 +26,39 @@ env:
 
 tasks:
 
+  init:
+    desc: "Initializes the project by renaming it from the template and properly rebasing it. This should be run first before anything else is done."
+    silent: true
+    cmds:
+      - |
+        # Add the template as remote and rebase this repository onto the template so we can merge changes from the template repository in the future
+        echo "adding git@github.com:pinax-network/golang-service-template.git as 'template' remote and rebase onto template/main"
+        git remote add template git@github.com:pinax-network/golang-service-template.git
+        git fetch --all
+        git rebase template/main
+        
+        # Rename this module to the current directory
+        echo "renaming project to {{.NEW_MODULE}}"
+        go mod edit -module {{.NEW_MODULE}}
+        find . -type f \( -name "*.go" -o -name "Dockerfile" -o -name ".gitignore" \) -exec sed -i '' -e 's/{{.PACKAGE}}/{{.NEW_MODULE}}/g' {} \;
+        gofmt -s -w .
+        
+        # Commit the changes
+        echo "committing changes"
+        git add .
+        git commit -m "initialized project {{.NEW_MODULE}}"
+        
+        # Copy over the default config if none available
+        if [ ! -f ./config.yaml ]; then
+          cp config.example.yaml config.yaml
+        fi
+        
+        echo "all done, please run 'git push --force' to update your origin remote"
+        echo "run 'task build && task start:service' to run your application"
+    vars:
+      NEW_MODULE:
+        sh: basename "$PWD"
+
   print:env:
     desc: "Print all environment variables set within this Taskfile."
     silent: true
