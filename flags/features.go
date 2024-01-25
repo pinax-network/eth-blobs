@@ -15,16 +15,17 @@ func GetEnabledFeatures() []Feature {
 	return features
 }
 
-func EnableFeature(feature Feature) {
+//nolint:golint,unused
+func enableFeature(feature Feature) {
 	if !slices.Contains(features, feature) {
 		features = append(features, feature)
 	}
 }
 
-func HasEnabledFeatures() bool {
-	return len(features) > 0
+func (f Feature) IsEnabled() bool {
+	return slices.Contains(features, f)
 }
 
-func HasFeatureEnabled(feature Feature) bool {
-	return slices.Contains(features, feature)
+func HasEnabledFeatures() bool {
+	return len(features) > 0
 }
