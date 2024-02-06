@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-  build:
+  sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
