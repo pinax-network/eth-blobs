@@ -142,8 +142,9 @@ tasks:
     silent: true
     cmds:
       - |
-        REMOTE_ORIGIN=$(/usr/bin/git config --get remote.origin.url)
-        REMOTE_TEMPLATE=$(/usr/bin/git config --get remote.template.url)
+        echo "Syncing template..."
+        REMOTE_ORIGIN=$(git config --get remote.origin.url)
+        REMOTE_TEMPLATE=$(git config --get remote.template.url || echo "")
         
         # we don't run this task on the template repository itself
         if [[ $REMOTE_ORIGIN == *"golang-service-template.git" ]]; then
@@ -151,32 +152,33 @@ tasks:
           exit 0;
         fi
         
+        
         # we need to add the template as additional remote for workflows
         if [[ $REMOTE_TEMPLATE == "" ]]; then
-          /usr/bin/git remote add template {{.TEMPLATE_REPOSITORY}}
+          git remote add template {{.TEMPLATE_REPOSITORY}}
         fi
         
         # check if we have changes on template/main
-        /usr/bin/git fetch --all &> /dev/null
-        diffs=$(/usr/bin/git diff main template/main)
+        git fetch --all &> /dev/null
+        diffs=$(git diff main template/main)
         
         if [ -z "$diffs" ]; then
           echo "No template changes to sync";
           exit 0;
         fi
         
-        REMOTE_HASH=$(/usr/bin/git rev-parse --short template/main)
+        REMOTE_HASH=$(git rev-parse --short template/main)
         TEMPLATE_BRANCH=sync/template_$REMOTE_HASH
         
-        if [ `/usr/bin/git rev-parse --verify $TEMPLATE_BRANCH 2>/dev/null` ]; then
+        if [ `git rev-parse --verify $TEMPLATE_BRANCH 2>/dev/null` ]; then
           echo "Branch to sync template changes from $TEMPLATE_BRANCH already exists.";
           exit 0;
         fi
         
-        if [[ ! -z $(/usr/bin/git status -s) ]]; then
+        if [[ ! -z $(git status -s) ]]; then
           echo "You have uncommitted changes, please commit before you sync the template";
           exit 1;
         fi
         
-        /usr/bin/git switch -c $TEMPLATE_BRANCH template/main
-        /usr/bin/gh pr create -B main -H $TEMPLATE_BRANCH --title "Sync template repository up to $REMOTE_HASH"
+        git switch -c $TEMPLATE_BRANCH template/main
+        gh pr create -B main -H $TEMPLATE_BRANCH --title "Sync template repository up to $REMOTE_HASH"
