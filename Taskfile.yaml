@@ -152,7 +152,6 @@ tasks:
           exit 0;
         fi
         
-        
         # we need to add the template as additional remote for workflows
         if [[ $REMOTE_TEMPLATE == "" ]]; then
           git remote add template {{.TEMPLATE_REPOSITORY}}
@@ -181,4 +180,11 @@ tasks:
         fi
         
         git switch -c $TEMPLATE_BRANCH template/main
-        gh pr create -B main -H $TEMPLATE_BRANCH --title "Sync template repository up to $REMOTE_HASH"
+        
+        # check if we are being run as a Github action and do have a GITHUB_TOKEN env variable set, if so we create a PR
+        if [ ! -z "$GITHUB_TOKEN" ]; then
+          gh pr create -B main -H $TEMPLATE_BRANCH --title "Sync template repository up to $REMOTE_HASH" --body "The template repository has new changes, please rebase this branch onto your main and then merge the pull request to keep your features up to date."
+        else
+          echo "Successfully created a new branch with the template changes"
+          echo "Run 'git rebase origin/main' to rebase the changes on the latest main branch" 
+        fi
