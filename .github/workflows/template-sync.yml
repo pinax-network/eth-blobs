@@ -1,0 +1,43 @@
+name: Sync Template
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup SSH Keys and known_hosts
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add - <<< "${{ secrets.SSH_EOSN_DEPLOY_KEY }}"
+          git config --global url."git@github.com:pinax-network".insteadOf "https://github.com/pinax-network"
+          git config --global url."git@github.com:pomelo-io".insteadOf "https://github.com/pomelo-io"
+          git config --global url."git@github.com:eosnationftw".insteadOf "https://github.com/eosnationftw"    
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21
+          check-latest: true
+          cache: true
+          cache-dependency-path: "**go.sum"
+
+      - name: Install Task
+        uses: arduino/setup-task@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          task sync:template
