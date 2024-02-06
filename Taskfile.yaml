@@ -138,7 +138,7 @@ tasks:
         fi
 
   sync:template:
-    desc: "Checks if template updates exist"
+    desc: "Syncs the template repository. This task will check if there are mergeable changes on template/main and if so create a local branch with those change and create a pull request"
     silent: true
     cmds:
       - |
