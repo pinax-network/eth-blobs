@@ -152,19 +152,26 @@ tasks:
           exit 0;
         fi
         
-        # we need to add the template as additional remote for workflows
+        # ensure we don't have uncommitted changes when running this locally
+        if [[ ! -z $(git status -s) ]]; then
+          echo "You have uncommitted changes, please commit before you sync the template";
+          exit 1;
+        fi
+        
+        # we need to add the template as additional remote if we don't already have it
         if [[ $REMOTE_TEMPLATE == "" ]]; then
           git remote add template {{.TEMPLATE_REPOSITORY}}
         fi
         
-        # check if we have changes on template/main
+        # check if we have changes on template/main by checking if there are changes we could merge
         git fetch --all &> /dev/null
-        diffs=$(git diff main template/main)
-        
-        if [ -z "$diffs" ]; then
+        if git merge --no-commit --no-ff template/main &>/dev/null; then
           echo "No template changes to sync";
           exit 0;
         fi
+        
+        # abort the merge, we don't actually want to do that here but just switch to a new branch with the changes later
+        git merge --abort &>/dev/null
         
         REMOTE_HASH=$(git rev-parse --short template/main)
         TEMPLATE_BRANCH=sync/template_$REMOTE_HASH
@@ -172,11 +179,6 @@ tasks:
         if [ `git rev-parse --verify $TEMPLATE_BRANCH 2>/dev/null` ]; then
           echo "Branch to sync template changes from $TEMPLATE_BRANCH already exists.";
           exit 0;
-        fi
-        
-        if [[ ! -z $(git status -s) ]]; then
-          echo "You have uncommitted changes, please commit before you sync the template";
-          exit 1;
         fi
         
         git switch -c $TEMPLATE_BRANCH template/main
