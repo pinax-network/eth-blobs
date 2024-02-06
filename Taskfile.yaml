@@ -23,6 +23,7 @@ env:
     sh: git remote get-url origin | sed -E 's/(.*github\.com[:\/])([^\/]+)\/([^\/]+)(\.git)?/\2/'
   # REGISTRY is set to the container registry to be used to upload Docker images
   REGISTRY: "ghcr.io"
+  TEMPLATE_REPOSITORY: "git@github.com:pinax-network/golang-service-template.git"
 
 tasks:
 
@@ -32,8 +33,8 @@ tasks:
     cmds:
       - |
         # Add the template as remote and rebase this repository onto the template so we can merge changes from the template repository in the future
-        echo "adding git@github.com:pinax-network/golang-service-template.git as 'template' remote and rebase onto template/main"
-        git remote add template git@github.com:pinax-network/golang-service-template.git
+        echo "adding {{.TEMPLATE_REPOSITORY}} as 'template' remote and rebase onto template/main"
+        git remote add template {{.TEMPLATE_REPOSITORY}}
         git fetch --all
         git rebase template/main
         
@@ -64,13 +65,14 @@ tasks:
     silent: true
     cmds:
       - |
-        echo -e "PACKAGE: \\t$PACKAGE"
-        echo -e "TAG: \\t\\t$TAG"
-        echo -e "SHORT_COMMIT: \\t$SHORT_COMMIT"
-        echo -e "COMMIT: \\t$COMMIT"
-        echo -e "REPOSITORY: \\t$REPOSITORY"
-        echo -e "ORGANISATION: \\t$ORGANISATION"
-        echo -e "REGISTRY: \\t$REGISTRY"
+        echo -e "PACKAGE: \\t\\t$PACKAGE"
+        echo -e "TAG: \\t\\t\\t$TAG"
+        echo -e "SHORT_COMMIT: \\t\\t$SHORT_COMMIT"
+        echo -e "COMMIT: \\t\\t$COMMIT"
+        echo -e "REPOSITORY: \\t\\t$REPOSITORY"
+        echo -e "ORGANISATION: \\t\\t$ORGANISATION"
+        echo -e "REGISTRY: \\t\\t$REGISTRY"
+        echo -e "TEMPLATE_REPOSITORY: \\t$TEMPLATE_REPOSITORY"
 
   build:
     desc: "Builds the Go binary. You can pass through arguments to the Go compiler by appending --, for example: 'task build -- -tags my_feature'. To set compiler flags use the BUILD_FLAGS environment variable."
@@ -134,3 +136,47 @@ tasks:
         if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; 
           then exit 1; 
         fi
+
+  sync:template:
+    desc: "Syncs the template repository. This task will check if there are mergeable changes on template/main and if so create a local branch with those change and create a pull request"
+    silent: true
+    cmds:
+      - |
+        REMOTE_ORIGIN=$(git config --get remote.origin.url)
+        REMOTE_TEMPLATE=$(git config --get remote.template.url)
+        
+        # we don't run this task on the template repository itself
+        if [[ $REMOTE_ORIGIN == *"golang-service-template.git" ]]; then
+          echo "We are on the template repository, nothing to do here";
+          exit 0;
+        fi
+        
+        # we need to add the template as additional remote for workflows
+        if [[ $REMOTE_TEMPLATE == "" ]]; then
+          git remote add template {{.TEMPLATE_REPOSITORY}}
+        fi
+        
+        # check if we have changes on template/main
+        git fetch --all &> /dev/null
+        diffs=$(git diff main template/main)
+        
+        if [ -z "$diffs" ]; then
+          echo "No template changes to sync";
+          exit 0;
+        fi
+        
+        REMOTE_HASH=$(git rev-parse --short template/main)
+        TEMPLATE_BRANCH=sync/template_$REMOTE_HASH
+        
+        if [ `git rev-parse --verify $TEMPLATE_BRANCH 2>/dev/null` ]; then
+          echo "Branch to sync template changes from $TEMPLATE_BRANCH already exists.";
+          exit 0;
+        fi
+        
+        if [[ ! -z $(git status -s) ]]; then
+          echo "You have uncommitted changes, please commit before you sync the template";
+          exit 1;
+        fi
+        
+        git switch -c $TEMPLATE_BRANCH template/main
+        gh pr create -B main -H $TEMPLATE_BRANCH --title "Sync template repository up to $REMOTE_HASH"
