@@ -44,13 +44,13 @@ jobs:
         run: task test:format
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v4
         env:
           GOPRIVATE: github.com/pinax-network,github.com/eosnationftw,github.com/pomelo-io
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         with:
           # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
-          version: v1.55
+          version: v1.56
           # Optional: golangci-lint command line arguments.
           args: --timeout=5m
           # Optional: show only new issues if it's a pull request. The default value is `false`.
