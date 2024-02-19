@@ -18,7 +18,7 @@ jobs:
         os: [ ubuntu-latest ]
     name: lint
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup SSH Keys and known_hosts
         env:
@@ -30,7 +30,7 @@ jobs:
           git config --global url."git@github.com:pomelo-io".insteadOf "https://github.com/pomelo-io"
           git config --global url."git@github.com:eosnationftw".insteadOf "https://github.com/eosnationftw"      
 
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
           cache: false
