@@ -1,4 +1,4 @@
-module golang-service-template
+module blob-service
 
 go 1.21
 

@@ -1,8 +1,8 @@
 package main
 
 import (
+	"blob-service/server"
 	"github.com/eosnationftw/eosn-base-api/log"
-	"golang-service-template/server"
 	"sync"
 )
 

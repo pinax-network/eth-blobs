@@ -1,6 +1,7 @@
 package server
 
 import (
+	"blob-service/flags"
 	"context"
 	"fmt"
 	"github.com/eosnationftw/eosn-base-api/log"
@@ -9,7 +10,6 @@ import (
 	"github.com/friendsofgo/errors"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
-	"golang-service-template/flags"
 	"net/http"
 	"os"
 	"os/signal"

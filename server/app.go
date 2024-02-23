@@ -1,11 +1,11 @@
 package server
 
 import (
+	"blob-service/config"
 	"flag"
 	base_config "github.com/eosnationftw/eosn-base-api/config"
 	"github.com/eosnationftw/eosn-base-api/log"
 	"github.com/gin-gonic/gin"
-	"golang-service-template/config"
 )
 
 type App struct {
