@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package eth.blobs.v1;
+
+option go_package = "github.com/pinax-network/blobs-service/server/pb/pinax/blobs/v1;pbbmsrv";
+
+import "google/protobuf/timestamp.proto";
+
+message Blobs { repeated Blob blobs = 1; }
+
+message Blob {
+  uint64 slot = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  uint64 block_number = 3;
+  uint32 index = 11;
+  uint32 length = 12;
+  bytes data = 13;
+  bytes kzg_commitment = 14;
+  bytes kzg_proof = 15;
+  repeated bytes kzg_commitment_inclusion_proof = 16;
+}

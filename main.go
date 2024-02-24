@@ -2,8 +2,9 @@ package main
 
 import (
 	"blob-service/server"
-	"github.com/eosnationftw/eosn-base-api/log"
 	"sync"
+
+	"github.com/eosnationftw/eosn-base-api/log"
 )
 
 func main() {

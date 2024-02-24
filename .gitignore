@@ -1,6 +1,7 @@
 config*.yaml
 !config.example.yaml
 blob-service
+__debug_bin*
 
 log/
 

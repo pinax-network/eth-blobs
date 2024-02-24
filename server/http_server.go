@@ -2,20 +2,32 @@ package server
 
 import (
 	"blob-service/flags"
+	pbbmsrv "blob-service/pb"
 	"context"
 	"fmt"
-	"github.com/eosnationftw/eosn-base-api/log"
-	"github.com/eosnationftw/eosn-base-api/metrics"
-	"github.com/eosnationftw/eosn-base-api/response"
-	"github.com/friendsofgo/errors"
-	ginzap "github.com/gin-contrib/zap"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/eosnationftw/eosn-base-api/helper"
+	"github.com/eosnationftw/eosn-base-api/log"
+	"github.com/eosnationftw/eosn-base-api/metrics"
+	"github.com/eosnationftw/eosn-base-api/middleware"
+	"github.com/eosnationftw/eosn-base-api/response"
+	"github.com/friendsofgo/errors"
+	ginzap "github.com/gin-contrib/zap"
+	"github.com/gin-gonic/gin"
+	"github.com/golang/protobuf/proto"
+	pbkv "github.com/streamingfast/substreams-sink-kv/pb/substreams/sink/kv/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+const (
+	NOT_FOUND_BLOBS = "not_found_blobs" // no blobs found
 )
 
 type HttpServer struct {
@@ -27,6 +39,10 @@ func (s *HttpServer) Initialize() {
 
 	s.Router = gin.New()
 
+	// error handling
+	s.Router.Use(middleware.Recovery(true))
+	s.Router.Use(middleware.Errors())
+
 	// logging
 	s.Router.Use(ginzap.Ginzap(log.ZapLogger, time.RFC3339, true))
 
@@ -35,6 +51,7 @@ func (s *HttpServer) Initialize() {
 	s.Router.Use(prometheusExporter.Instrument())
 
 	s.Router.GET("/version", Version)
+	s.Router.GET("/blobs/by_slot/:slot", s.BlobsBySlot)
 }
 
 func (s *HttpServer) Run(wg *sync.WaitGroup) {
@@ -85,5 +102,50 @@ func Version(c *gin.Context) {
 		Version:  flags.GetVersion(),
 		Commit:   flags.GetShortCommit(),
 		Features: flags.GetEnabledFeatures(),
+	}})
+}
+
+type BlobsResponse struct {
+	Blobs []*pbbmsrv.Blob `json:"blobs"`
+}
+
+func (s *HttpServer) BlobsBySlot(c *gin.Context) {
+
+	slot := c.Param("slot")
+
+	prefix := "slot:" + slot + ":"
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, err := s.App.SinkClient.GetByPrefix(ctx, &pbkv.GetByPrefixRequest{Prefix: prefix})
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			helper.ReportPublicErrorAndAbort(c, response.GatewayTimeout, err)
+			return
+		}
+		st, ok := status.FromError(err)
+		if ok && st.Code() == codes.NotFound {
+			helper.ReportPublicErrorAndAbort(c, response.NewApiErrorNotFound(NOT_FOUND_BLOBS), err)
+			return
+		}
+		helper.ReportPublicErrorAndAbort(c, response.BadGateway, err)
+		return
+	}
+
+	blobs := &pbbmsrv.Blobs{}
+	for _, kv := range resp.KeyValues {
+
+		blob := &pbbmsrv.Blob{}
+		err = proto.Unmarshal(kv.Value, blob)
+		if err != nil {
+			helper.ReportPublicErrorAndAbort(c, response.InternalServerError, err)
+			return
+		}
+		blobs.Blobs = append(blobs.Blobs, blob)
+	}
+
+	response.OkDataResponse(c, &response.ApiDataResponse{Data: &BlobsResponse{
+		Blobs: blobs.Blobs,
 	}})
 }

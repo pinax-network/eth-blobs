@@ -128,6 +128,13 @@ tasks:
     cmds:
       - ./{{.PACKAGE}} {{.CLI_ARGS}}
 
+  protogen:
+    desc: "Builds types from protobuf files"
+    cmds:
+      - mkdir -p pb
+      - protoc --go_out=./pb --go_opt=paths=source_relative --proto_path=substreams/proto blobs.proto
+      - ls pb/*.pb.go | xargs -n1 -IX bash -c 'sed s/,omitempty// X > X.tmp && mv X{.tmp,}'
+
   test:format:
     desc: "Checks Golang's code formatter"
     silent: true
