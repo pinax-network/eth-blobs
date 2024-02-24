@@ -10,7 +10,7 @@ fn map_blobs(blk: BeaconBlock) -> Result<Blobs, substreams::errors::Error> {
         Deneb(body) => body
             .embedded_blobs
             .into_iter()
-            .inspect(|b| substreams::log::info!("b.kzg_commitment_inclusion_proof: {:?}", b.kzg_commitment_inclusion_proof))
+            // .inspect(|b| substreams::log::info!("b.kzg_commitment_inclusion_proof: {:?}", b.kzg_commitment_inclusion_proof))
             .map(|b| Blob {
                 slot: blk.slot,
                 timestamp: blk.timestamp.clone(),
@@ -20,7 +20,7 @@ fn map_blobs(blk: BeaconBlock) -> Result<Blobs, substreams::errors::Error> {
                 data: b.blob,
                 kzg_commitment: b.kzg_commitment,
                 kzg_proof: b.kzg_proof,
-                kzg_commitment_inclusion_proof: vec![vec![1,2,3],vec![1,2,3]],// b.kzg_commitment_inclusion_proof,
+                kzg_commitment_inclusion_proof: b.kzg_commitment_inclusion_proof,
             })
             .collect(),
         _ => vec![],

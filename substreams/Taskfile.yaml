@@ -1,0 +1,44 @@
+version: '3'
+
+env:
+  ENDPOINT: goerli-scdm37b.mar.eosn.io:10016
+
+tasks:
+  protogen:
+    desc: "Generates Rust types for substreams from protobuf files"
+    cmds:
+      - substreams protogen ./substreams.yaml --exclude-paths="sf/substreams,google,sf/ethereum,substreams/sink"
+
+  build:
+    desc: "Builds the substreams module"
+    cmds:
+      - cargo build --target wasm32-unknown-unknown --release
+
+  pack:
+    desc: "Pack the substreams module into SPKG file"
+    deps:
+      - build
+    cmds:
+      - substreams pack substreams.yaml
+
+  run:
+    desc: "Runs the substreams module"
+    deps:
+      - build
+    cmds:
+      - substreams run -e $ENDPOINT map_blobs -s -10 --plaintext
+
+  gui:
+    desc: "Runs the substreams module with the GUI"
+    deps:
+      - build
+    cmds:
+      - substreams gui -e $ENDPOINT map_blobs -s -10 --plaintext
+
+  sink:
+    desc: "Sinks substreams module into KV store"
+    deps:
+      - build
+    cmds:
+      - substreams-sink-kv inject $ENDPOINT badger3://./blobs.db substreams.yaml --server-listen-addr=:8000 --plaintext
+
