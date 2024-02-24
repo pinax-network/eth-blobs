@@ -1,10 +1,12 @@
 // @generated
-pub mod eth {
-    pub mod blobs {
-        // @@protoc_insertion_point(attribute:eth.blobs.v1)
-        pub mod v1 {
-            include!("eth.blobs.v1.rs");
-            // @@protoc_insertion_point(eth.blobs.v1)
+pub mod pinax {
+    pub mod ethereum {
+        pub mod blobs {
+            // @@protoc_insertion_point(attribute:pinax.ethereum.blobs.v1)
+            pub mod v1 {
+                include!("pinax.ethereum.blobs.v1.rs");
+                // @@protoc_insertion_point(pinax.ethereum.blobs.v1)
+            }
         }
     }
 }

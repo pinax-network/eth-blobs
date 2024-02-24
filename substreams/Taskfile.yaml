@@ -7,7 +7,7 @@ tasks:
   protogen:
     desc: "Generates Rust types for substreams from protobuf files"
     cmds:
-      - substreams protogen ./substreams.yaml --exclude-paths="sf/substreams,google,sf/ethereum,substreams/sink"
+      - substreams protogen ./substreams.yaml --exclude-paths="sf/substreams,google,substreams/sink"
 
   build:
     desc: "Builds the substreams module"

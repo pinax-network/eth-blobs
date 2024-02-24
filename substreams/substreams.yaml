@@ -4,7 +4,6 @@ package:
   version: v0.2.0
 
 imports:
-  eth: https://github.com/streamingfast/firehose-ethereum/releases/download/v2.0.0/ethereum-v1.1.0.spkg
   beacon: https://github.com/pinax-network/firehose-beacon/releases/download/v0.1.0/beacon-v0.1.0.spkg
   kv: https://github.com/streamingfast/substreams-sink-kv/releases/download/v2.1.6/substreams-sink-kv-v2.1.6.spkg
 
@@ -21,7 +20,7 @@ binaries:
 
 modules:
   - name: map_blobs
-    initialBlock: 7685339
+    initialBlock: 7677000
     kind: map
     inputs:
       - source: sf.beacon.type.v1.Block
@@ -29,7 +28,7 @@ modules:
       type: proto:eth.blobs.v1.Blobs
 
   - name: kv_out
-    initialBlock: 7685339
+    initialBlock: 7677000
     kind: map
     inputs:
       - map: map_blobs

@@ -113,12 +113,12 @@ func (s *HttpServer) BlobsBySlot(c *gin.Context) {
 
 	slot := c.Param("slot")
 
-	prefix := "slot:" + slot + ":"
+	key := "slot:" + slot
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	resp, err := s.App.SinkClient.GetByPrefix(ctx, &pbkv.GetByPrefixRequest{Prefix: prefix})
+	resp, err := s.App.SinkClient.Get(ctx, &pbkv.GetRequest{Key: key})
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			helper.ReportPublicErrorAndAbort(c, response.GatewayTimeout, err)
@@ -134,15 +134,10 @@ func (s *HttpServer) BlobsBySlot(c *gin.Context) {
 	}
 
 	blobs := &pbbmsrv.Blobs{}
-	for _, kv := range resp.KeyValues {
-
-		blob := &pbbmsrv.Blob{}
-		err = proto.Unmarshal(kv.Value, blob)
-		if err != nil {
-			helper.ReportPublicErrorAndAbort(c, response.InternalServerError, err)
-			return
-		}
-		blobs.Blobs = append(blobs.Blobs, blob)
+	err = proto.Unmarshal(resp.GetValue(), blobs)
+	if err != nil {
+		helper.ReportPublicErrorAndAbort(c, response.InternalServerError, err)
+		return
 	}
 
 	response.OkDataResponse(c, &response.ApiDataResponse{Data: &BlobsResponse{

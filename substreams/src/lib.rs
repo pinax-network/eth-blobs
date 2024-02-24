@@ -1,6 +1,6 @@
 mod pb;
 
-use pb::eth::blobs::v1::{Blob, Blobs};
+use pb::pinax::ethereum::blobs::v1::{Blob, Blobs, Extra, SignedBlockHeader, Message};
 use pb::sf::beacon::r#type::v1::{block::Body::*, Block as BeaconBlock};
 use substreams_sink_kv::pb::sf::substreams::sink::kv::v1::KvOperations;
 
@@ -12,15 +12,25 @@ fn map_blobs(blk: BeaconBlock) -> Result<Blobs, substreams::errors::Error> {
             .into_iter()
             // .inspect(|b| substreams::log::info!("b.kzg_commitment_inclusion_proof: {:?}", b.kzg_commitment_inclusion_proof))
             .map(|b| Blob {
-                slot: blk.slot,
-                timestamp: blk.timestamp.clone(),
-                block_number: body.execution_payload.as_ref().cloned().unwrap_or_default().block_number,
                 index: b.index as u32,
-                length: b.blob.len() as u32,
-                data: b.blob,
+                blob: b.blob,
                 kzg_commitment: b.kzg_commitment,
                 kzg_proof: b.kzg_proof,
                 kzg_commitment_inclusion_proof: b.kzg_commitment_inclusion_proof,
+                signed_block_header: Some(SignedBlockHeader {
+                    message: Some(Message {
+                        slot: blk.slot,
+                        proposer_index: blk.proposer_index,
+                        parent_root: blk.parent_root.clone(),
+                        state_root: blk.state_root.clone(),
+                        body_root: blk.root.clone(),
+                    }),
+                    signature: blk.signature.clone(),
+                }),
+                extra: Some(Extra {
+                    block_number: body.execution_payload.as_ref().cloned().unwrap_or_default().block_number,
+                    timestamp: blk.timestamp.clone(),
+                }),
             })
             .collect(),
         _ => vec![],
@@ -32,11 +42,14 @@ fn map_blobs(blk: BeaconBlock) -> Result<Blobs, substreams::errors::Error> {
 fn kv_out(blobs: Blobs) -> Result<KvOperations, substreams::errors::Error> {
     let mut kv_ops: KvOperations = Default::default();
 
-    for blob in blobs.blobs {
-        let key = format!("slot:{}:{}", blob.slot, blob.index);
-        let value = substreams::proto::encode(&blob).expect("unable to encode blob");
-        kv_ops.push_new(key, value, 1);
+    if blobs.blobs.is_empty() {
+        return Ok(kv_ops);
     }
+
+    let slot = blobs.blobs.first().unwrap().signed_block_header.as_ref().unwrap().message.as_ref().unwrap().slot;
+    let key = format!("slot:{}", slot);
+    let value = substreams::proto::encode(&blobs).expect("unable to encode blobs");
+    kv_ops.push_new(key, value, 1);
 
     // let slot = blobs.blobs.first().unwrap().slot.to_string();
     // kv_ops.push_new("head", slot.as_bytes(), 1);
