@@ -25,7 +25,7 @@ modules:
     inputs:
       - source: sf.beacon.type.v1.Block
     output:
-      type: proto:eth.blobs.v1.Blobs
+      type: proto:pinax.ethereum.blobs.v1.Blobs
 
   - name: kv_out
     initialBlock: 7413760
