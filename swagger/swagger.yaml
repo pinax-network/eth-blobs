@@ -1,0 +1,150 @@
+basePath: /v1
+definitions:
+  pbbmsrv.Blob:
+    properties:
+      blob:
+        items:
+          type: integer
+        type: array
+      extra:
+        $ref: '#/definitions/pbbmsrv.Extra'
+      index:
+        type: integer
+      kzg_commitment:
+        items:
+          type: integer
+        type: array
+      kzg_commitment_inclusion_proof:
+        items:
+          items:
+            type: integer
+          type: array
+        type: array
+      kzg_proof:
+        items:
+          type: integer
+        type: array
+      signed_block_header:
+        $ref: '#/definitions/pbbmsrv.SignedBlockHeader'
+    type: object
+  pbbmsrv.Extra:
+    properties:
+      block_number:
+        type: integer
+      timestamp:
+        $ref: '#/definitions/timestamppb.Timestamp'
+    type: object
+  pbbmsrv.Message:
+    properties:
+      body_root:
+        items:
+          type: integer
+        type: array
+      parent_root:
+        items:
+          type: integer
+        type: array
+      proposer_index:
+        type: integer
+      slot:
+        type: integer
+      state_root:
+        items:
+          type: integer
+        type: array
+    type: object
+  pbbmsrv.SignedBlockHeader:
+    properties:
+      message:
+        $ref: '#/definitions/pbbmsrv.Message'
+      signature:
+        items:
+          type: integer
+        type: array
+    type: object
+  response.ApiDataResponse:
+    properties:
+      data: {}
+      meta: {}
+    type: object
+  response.ApiError:
+    properties:
+      code:
+        type: string
+      detail:
+        type: string
+      status:
+        type: integer
+    type: object
+  response.ApiErrorResponse:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/response.ApiError'
+        type: array
+    type: object
+  server.BlobsResponse:
+    properties:
+      blobs:
+        items:
+          $ref: '#/definitions/pbbmsrv.Blob'
+        type: array
+    type: object
+  timestamppb.Timestamp:
+    properties:
+      nanos:
+        description: |-
+          Non-negative fractions of a second at nanosecond resolution. Negative
+          second values with fractions must still have non-negative nanos values
+          that count forward in time. Must be from 0 to 999,999,999
+          inclusive.
+        type: integer
+      seconds:
+        description: |-
+          Represents seconds of UTC time since Unix epoch
+          1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
+          9999-12-31T23:59:59Z inclusive.
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is the API for Ethereum Blobs.
+  title: Ethereum Consensus Layer Blobs REST API
+  version: "1.0"
+paths:
+  /blobs/by_slot/{slot}:
+    get:
+      parameters:
+      - description: Slot Number
+        in: path
+        name: slot
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ApiDataResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/server.BlobsResponse'
+              type: object
+        "404":
+          description: No blobs in this slot
+          schema:
+            $ref: '#/definitions/response.ApiErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ApiErrorResponse'
+      summary: Get Blobs by slot number
+      tags:
+      - blobs
+schemes:
+- http
+- https
+swagger: "2.0"

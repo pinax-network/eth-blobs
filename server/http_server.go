@@ -12,6 +12,9 @@ import (
 	"syscall"
 	"time"
 
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"github.com/eosnationftw/eosn-base-api/helper"
 	"github.com/eosnationftw/eosn-base-api/log"
 	"github.com/eosnationftw/eosn-base-api/metrics"
@@ -47,11 +50,19 @@ func (s *HttpServer) Initialize() {
 	s.Router.Use(ginzap.Ginzap(log.ZapLogger, time.RFC3339, true))
 
 	// prometheus metrics
-	prometheusExporter := metrics.NewPrometheusExporter(s.Router, "/metrics")
+	prometheusExporter := metrics.NewPrometheusExporter(s.Router, "/v1/metrics")
 	s.Router.Use(prometheusExporter.Instrument())
 
 	s.Router.GET("/version", Version)
-	s.Router.GET("/blobs/by_slot/:slot", s.BlobsBySlot)
+	s.Router.NoRoute(NoRoute)
+	s.Router.NoMethod(NoMethod)
+
+	// init default routes
+	v1 := s.Router.Group("/v1")
+
+	v1.GET("/blobs/by_slot/:slot", s.BlobsBySlot)
+
+	s.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }
 
 func (s *HttpServer) Run(wg *sync.WaitGroup) {
@@ -109,6 +120,16 @@ type BlobsResponse struct {
 	Blobs []*pbbmsrv.Blob `json:"blobs"`
 }
 
+// BlobsBySlot
+//
+//	@Summary	Get Blobs by slot number
+//	@Tags		blobs
+//	@Produce	json
+//	@Param		slot	path		string	true	"Slot Number"
+//	@Success	200		{object}	response.ApiDataResponse{data=BlobsResponse}
+//	@Failure	404		{object}	response.ApiErrorResponse	"No blobs in this slot"
+//	@Failure	500		{object}	response.ApiErrorResponse
+//	@Router		/blobs/by_slot/{slot} [get]
 func (s *HttpServer) BlobsBySlot(c *gin.Context) {
 
 	slot := c.Param("slot")
@@ -143,4 +164,13 @@ func (s *HttpServer) BlobsBySlot(c *gin.Context) {
 	response.OkDataResponse(c, &response.ApiDataResponse{Data: &BlobsResponse{
 		Blobs: blobs.Blobs,
 	}})
+}
+
+func NoRoute(c *gin.Context) {
+	path := c.Request.URL.Path
+	helper.ReportPublicErrorAndAbort(c, response.RouteNotFound, fmt.Sprintf("path not found: %s %s", c.Request.Method, path))
+}
+
+func NoMethod(c *gin.Context) {
+	helper.ReportPublicErrorAndAbort(c, response.MethodNotAllowed, fmt.Sprintf("method not allowed '%s'", c.Request.Method))
 }
