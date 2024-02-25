@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pinax.ethereum.blobs.v1;
 
-option go_package = "github.com/pinax-network/blobs-service/pb/pinax/blobs/v1;pbbmsrv";
+option go_package = "github.com/pinax-network/blobs-service/pb/pinax/ethereum/blobs/v1;pbbl";
 
 import "google/protobuf/timestamp.proto";
 

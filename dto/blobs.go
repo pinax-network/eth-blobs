@@ -1,7 +1,7 @@
 package dto
 
 import (
-	pbbl "blob-service/pb"
+	pbbl "blob-service/pb/pinax/ethereum/blobs/v1"
 	"encoding/hex"
 	"encoding/json"
 	"strconv"

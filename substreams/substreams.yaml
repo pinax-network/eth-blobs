@@ -9,7 +9,7 @@ imports:
 
 protobuf:
   files:
-    - blobs.proto
+    - pinax/ethereum/blobs/v1/blobs.proto
   importPaths:
     - ./proto
 

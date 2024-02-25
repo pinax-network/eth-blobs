@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"blob-service/dto"
-	pbbl "blob-service/pb"
+	pbbl "blob-service/pb/pinax/ethereum/blobs/v1"
 	"context"
 	"strconv"
 	"time"
