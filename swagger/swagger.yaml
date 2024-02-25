@@ -1,12 +1,5 @@
 basePath: /v1
 definitions:
-  controllers.BlobsResponse:
-    properties:
-      blobs:
-        items:
-          $ref: '#/definitions/pbbmsrv.Blob'
-        type: array
-    type: object
   controllers.VersionResponse:
     properties:
       commit:
@@ -18,14 +11,14 @@ definitions:
       version:
         type: string
     type: object
-  pbbmsrv.Blob:
+  dto.Blob:
     properties:
       blob:
         items:
           type: integer
         type: array
       extra:
-        $ref: '#/definitions/pbbmsrv.Extra'
+        $ref: '#/definitions/dto.Extra'
       index:
         type: integer
       kzg_commitment:
@@ -43,16 +36,16 @@ definitions:
           type: integer
         type: array
       signed_block_header:
-        $ref: '#/definitions/pbbmsrv.SignedBlockHeader'
+        $ref: '#/definitions/dto.SignedBlockHeader'
     type: object
-  pbbmsrv.Extra:
+  dto.Extra:
     properties:
       block_number:
         type: integer
       timestamp:
-        $ref: '#/definitions/timestamppb.Timestamp'
+        $ref: '#/definitions/dto.Timestamp'
     type: object
-  pbbmsrv.Message:
+  dto.Message:
     properties:
       body_root:
         items:
@@ -71,14 +64,21 @@ definitions:
           type: integer
         type: array
     type: object
-  pbbmsrv.SignedBlockHeader:
+  dto.SignedBlockHeader:
     properties:
       message:
-        $ref: '#/definitions/pbbmsrv.Message'
+        $ref: '#/definitions/dto.Message'
       signature:
         items:
           type: integer
         type: array
+    type: object
+  dto.Timestamp:
+    properties:
+      nanos:
+        type: integer
+      seconds:
+        type: integer
     type: object
   response.ApiDataResponse:
     properties:
@@ -101,22 +101,6 @@ definitions:
           $ref: '#/definitions/response.ApiError'
         type: array
     type: object
-  timestamppb.Timestamp:
-    properties:
-      nanos:
-        description: |-
-          Non-negative fractions of a second at nanosecond resolution. Negative
-          second values with fractions must still have non-negative nanos values
-          that count forward in time. Must be from 0 to 999,999,999
-          inclusive.
-        type: integer
-      seconds:
-        description: |-
-          Represents seconds of UTC time since Unix epoch
-          1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-          9999-12-31T23:59:59Z inclusive.
-        type: integer
-    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -136,23 +120,29 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Sulccessful response
           schema:
             allOf:
             - $ref: '#/definitions/response.ApiDataResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/controllers.BlobsResponse'
+                  items:
+                    $ref: '#/definitions/dto.Blob'
+                  type: array
               type: object
+        "400":
+          description: invalid_slot
+          schema:
+            $ref: '#/definitions/response.ApiErrorResponse'
         "404":
-          description: No blobs in this slot
+          description: blobs_not_found
           schema:
             $ref: '#/definitions/response.ApiErrorResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ApiErrorResponse'
-      summary: Get Blobs by slot number
+      summary: Get Blobs by slot
       tags:
       - blobs
   /version:

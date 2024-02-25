@@ -1,0 +1,16 @@
+GET http://localhost:8080/v1/blobs/by_slot/7677000
+
+###
+
+GET http://localhost:8080/v1/blobs/by_slot/7658912
+
+
+
+
+###
+
+GET http://goerli-arch41.mar.eosn.io:5052/eth/v1/beacon/blob_sidecars/7677000
+
+###
+
+GET http://goerli-arch41.mar.eosn.io:5052/eth/v1/beacon/blob_sidecars/7658912

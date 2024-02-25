@@ -23,7 +23,7 @@ const docTemplate = `{
                 "tags": [
                     "blobs"
                 ],
-                "summary": "Get Blobs by slot number",
+                "summary": "Get Blobs by slot",
                 "parameters": [
                     {
                         "type": "string",
@@ -35,7 +35,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Sulccessful response",
                         "schema": {
                             "allOf": [
                                 {
@@ -45,15 +45,24 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/controllers.BlobsResponse"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/dto.Blob"
+                                            }
                                         }
                                     }
                                 }
                             ]
                         }
                     },
+                    "400": {
+                        "description": "invalid_slot",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiErrorResponse"
+                        }
+                    },
                     "404": {
-                        "description": "No blobs in this slot",
+                        "description": "blobs_not_found",
                         "schema": {
                             "$ref": "#/definitions/response.ApiErrorResponse"
                         }
@@ -109,17 +118,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "controllers.BlobsResponse": {
-            "type": "object",
-            "properties": {
-                "blobs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pbbmsrv.Blob"
-                    }
-                }
-            }
-        },
         "controllers.VersionResponse": {
             "type": "object",
             "properties": {
@@ -137,7 +135,7 @@ const docTemplate = `{
                 }
             }
         },
-        "pbbmsrv.Blob": {
+        "dto.Blob": {
             "type": "object",
             "properties": {
                 "blob": {
@@ -147,7 +145,7 @@ const docTemplate = `{
                     }
                 },
                 "extra": {
-                    "$ref": "#/definitions/pbbmsrv.Extra"
+                    "$ref": "#/definitions/dto.Extra"
                 },
                 "index": {
                     "type": "integer"
@@ -174,22 +172,22 @@ const docTemplate = `{
                     }
                 },
                 "signed_block_header": {
-                    "$ref": "#/definitions/pbbmsrv.SignedBlockHeader"
+                    "$ref": "#/definitions/dto.SignedBlockHeader"
                 }
             }
         },
-        "pbbmsrv.Extra": {
+        "dto.Extra": {
             "type": "object",
             "properties": {
                 "block_number": {
                     "type": "integer"
                 },
                 "timestamp": {
-                    "$ref": "#/definitions/timestamppb.Timestamp"
+                    "$ref": "#/definitions/dto.Timestamp"
                 }
             }
         },
-        "pbbmsrv.Message": {
+        "dto.Message": {
             "type": "object",
             "properties": {
                 "body_root": {
@@ -218,17 +216,28 @@ const docTemplate = `{
                 }
             }
         },
-        "pbbmsrv.SignedBlockHeader": {
+        "dto.SignedBlockHeader": {
             "type": "object",
             "properties": {
                 "message": {
-                    "$ref": "#/definitions/pbbmsrv.Message"
+                    "$ref": "#/definitions/dto.Message"
                 },
                 "signature": {
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "dto.Timestamp": {
+            "type": "object",
+            "properties": {
+                "nanos": {
+                    "type": "integer"
+                },
+                "seconds": {
+                    "type": "integer"
                 }
             }
         },
@@ -261,19 +270,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/response.ApiError"
                     }
-                }
-            }
-        },
-        "timestamppb.Timestamp": {
-            "type": "object",
-            "properties": {
-                "nanos": {
-                    "description": "Non-negative fractions of a second at nanosecond resolution. Negative\nsecond values with fractions must still have non-negative nanos values\nthat count forward in time. Must be from 0 to 999,999,999\ninclusive.",
-                    "type": "integer"
-                },
-                "seconds": {
-                    "description": "Represents seconds of UTC time since Unix epoch\n1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to\n9999-12-31T23:59:59Z inclusive.",
-                    "type": "integer"
                 }
             }
         }
