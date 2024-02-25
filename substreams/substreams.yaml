@@ -20,7 +20,7 @@ binaries:
 
 modules:
   - name: map_blobs
-    initialBlock: 7677000
+    initialBlock: 7413760
     kind: map
     inputs:
       - source: sf.beacon.type.v1.Block
@@ -28,7 +28,7 @@ modules:
       type: proto:eth.blobs.v1.Blobs
 
   - name: kv_out
-    initialBlock: 7677000
+    initialBlock: 7413760
     kind: map
     inputs:
       - map: map_blobs
@@ -40,4 +40,23 @@ sink:
   type: sf.substreams.sink.kv.v1.GenericService
   config:
 
-network: mainnet-cl
+network: goerli-cl
+
+# networks:
+#   goerli-cl:
+#     initialBlock:
+#       map_blobs: 7413760
+#       kv_out: 7413760
+#   sepolia-cl:
+#     initialBlock:
+#       map_blobs: 4243456
+#       kv_out: 4243456
+#   holesky-cl:
+#     initialBlock:
+#       map_blobs: 950272
+#       kv_out: 950272
+#   mainnet-cl:
+#     initialBlock:
+#       map_blobs: 8626176
+#       kv_out: 8626176
+
