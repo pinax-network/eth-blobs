@@ -45,7 +45,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/server.BlobsResponse"
+                                            "$ref": "#/definitions/controllers.BlobsResponse"
                                         }
                                     }
                                 }
@@ -69,6 +69,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "controllers.BlobsResponse": {
+            "type": "object",
+            "properties": {
+                "blobs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/pbbmsrv.Blob"
+                    }
+                }
+            }
+        },
         "pbbmsrv.Blob": {
             "type": "object",
             "properties": {
@@ -192,17 +203,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/response.ApiError"
-                    }
-                }
-            }
-        },
-        "server.BlobsResponse": {
-            "type": "object",
-            "properties": {
-                "blobs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/pbbmsrv.Blob"
                     }
                 }
             }

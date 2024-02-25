@@ -1,5 +1,12 @@
 basePath: /v1
 definitions:
+  controllers.BlobsResponse:
+    properties:
+      blobs:
+        items:
+          $ref: '#/definitions/pbbmsrv.Blob'
+        type: array
+    type: object
   pbbmsrv.Blob:
     properties:
       blob:
@@ -83,13 +90,6 @@ definitions:
           $ref: '#/definitions/response.ApiError'
         type: array
     type: object
-  server.BlobsResponse:
-    properties:
-      blobs:
-        items:
-          $ref: '#/definitions/pbbmsrv.Blob'
-        type: array
-    type: object
   timestamppb.Timestamp:
     properties:
       nanos:
@@ -131,7 +131,7 @@ paths:
             - $ref: '#/definitions/response.ApiDataResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/server.BlobsResponse'
+                  $ref: '#/definitions/controllers.BlobsResponse'
               type: object
         "404":
           description: No blobs in this slot

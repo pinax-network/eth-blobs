@@ -1,8 +1,8 @@
 package server
 
 import (
+	"blob-service/controllers"
 	"blob-service/flags"
-	pbbmsrv "blob-service/pb"
 	"context"
 	"fmt"
 	"net/http"
@@ -12,8 +12,12 @@ import (
 	"syscall"
 	"time"
 
+	pbkv "github.com/streamingfast/substreams-sink-kv/pb/substreams/sink/kv/v1"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 
 	"github.com/eosnationftw/eosn-base-api/helper"
 	"github.com/eosnationftw/eosn-base-api/log"
@@ -23,14 +27,6 @@ import (
 	"github.com/friendsofgo/errors"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
-	"github.com/golang/protobuf/proto"
-	pbkv "github.com/streamingfast/substreams-sink-kv/pb/substreams/sink/kv/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-)
-
-const (
-	NOT_FOUND_BLOBS = "not_found_blobs" // no blobs found
 )
 
 type HttpServer struct {
@@ -53,16 +49,15 @@ func (s *HttpServer) Initialize() {
 	prometheusExporter := metrics.NewPrometheusExporter(s.Router, "/v1/metrics")
 	s.Router.Use(prometheusExporter.Instrument())
 
+	s.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	s.Router.GET("/version", Version)
 	s.Router.NoRoute(NoRoute)
 	s.Router.NoMethod(NoMethod)
 
-	// init default routes
+	blobsController := controllers.NewBlobsController(s.App.SinkClient)
+
 	v1 := s.Router.Group("/v1")
-
-	v1.GET("/blobs/by_slot/:slot", s.BlobsBySlot)
-
-	s.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	v1.GET("/blobs/by_slot/:slot", blobsController.BlobsBySlot)
 }
 
 func (s *HttpServer) Run(wg *sync.WaitGroup) {
@@ -116,56 +111,6 @@ func Version(c *gin.Context) {
 	}})
 }
 
-type BlobsResponse struct {
-	Blobs []*pbbmsrv.Blob `json:"blobs"`
-}
-
-// BlobsBySlot
-//
-//	@Summary	Get Blobs by slot number
-//	@Tags		blobs
-//	@Produce	json
-//	@Param		slot	path		string	true	"Slot Number"
-//	@Success	200		{object}	response.ApiDataResponse{data=BlobsResponse}
-//	@Failure	404		{object}	response.ApiErrorResponse	"No blobs in this slot"
-//	@Failure	500		{object}	response.ApiErrorResponse
-//	@Router		/blobs/by_slot/{slot} [get]
-func (s *HttpServer) BlobsBySlot(c *gin.Context) {
-
-	slot := c.Param("slot")
-
-	key := "slot:" + slot
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
-	resp, err := s.App.SinkClient.Get(ctx, &pbkv.GetRequest{Key: key})
-	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			helper.ReportPublicErrorAndAbort(c, response.GatewayTimeout, err)
-			return
-		}
-		st, ok := status.FromError(err)
-		if ok && st.Code() == codes.NotFound {
-			helper.ReportPublicErrorAndAbort(c, response.NewApiErrorNotFound(NOT_FOUND_BLOBS), err)
-			return
-		}
-		helper.ReportPublicErrorAndAbort(c, response.BadGateway, err)
-		return
-	}
-
-	blobs := &pbbmsrv.Blobs{}
-	err = proto.Unmarshal(resp.GetValue(), blobs)
-	if err != nil {
-		helper.ReportPublicErrorAndAbort(c, response.InternalServerError, err)
-		return
-	}
-
-	response.OkDataResponse(c, &response.ApiDataResponse{Data: &BlobsResponse{
-		Blobs: blobs.Blobs,
-	}})
-}
-
 func NoRoute(c *gin.Context) {
 	path := c.Request.URL.Path
 	helper.ReportPublicErrorAndAbort(c, response.RouteNotFound, fmt.Sprintf("path not found: %s %s", c.Request.Method, path))
@@ -173,4 +118,25 @@ func NoRoute(c *gin.Context) {
 
 func NoMethod(c *gin.Context) {
 	helper.ReportPublicErrorAndAbort(c, response.MethodNotAllowed, fmt.Sprintf("method not allowed '%s'", c.Request.Method))
+}
+
+func ConnectToSinkServer(sinkServerAddress string) pbkv.KvClient {
+	conn, err := grpc.Dial(
+		sinkServerAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(1024*1024*1024),
+			grpc.WaitForReady(true),
+		),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                5 * time.Minute, // send pings every ... when there is no activity
+			Timeout:             5 * time.Second, // wait that amount of time for ping ack before considering the connection dead
+			PermitWithoutStream: false,
+		}),
+	)
+	if err != nil {
+		log.Fatalf("failed to connect to the sink server: %v", err)
+	}
+
+	return pbkv.NewKvClient(conn)
 }
