@@ -2,7 +2,6 @@ package server
 
 import (
 	"blob-service/controllers"
-	"blob-service/flags"
 	"context"
 	"fmt"
 	"net/http"
@@ -50,7 +49,7 @@ func (s *HttpServer) Initialize() {
 	s.Router.Use(prometheusExporter.Instrument())
 
 	s.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	s.Router.GET("/version", Version)
+	s.Router.GET("/version", controllers.Version)
 	s.Router.NoRoute(NoRoute)
 	s.Router.NoMethod(NoMethod)
 
@@ -95,20 +94,6 @@ func SetupHttpServer(app *App) *HttpServer {
 }
 
 func (s *HttpServer) Close() {
-}
-
-type VersionResponse struct {
-	Version  string          `json:"version"`
-	Commit   string          `json:"commit"`
-	Features []flags.Feature `json:"enabled_features" swaggertype:"array,string"`
-}
-
-func Version(c *gin.Context) {
-	response.OkDataResponse(c, &response.ApiDataResponse{Data: &VersionResponse{
-		Version:  flags.GetVersion(),
-		Commit:   flags.GetShortCommit(),
-		Features: flags.GetEnabledFeatures(),
-	}})
 }
 
 func NoRoute(c *gin.Context) {

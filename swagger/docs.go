@@ -66,6 +66,46 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/version": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "version"
+                ],
+                "summary": "Returns the version, commit hash and enabled features of this API.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ApiDataResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/controllers.VersionResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -77,6 +117,23 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/pbbmsrv.Blob"
                     }
+                }
+            }
+        },
+        "controllers.VersionResponse": {
+            "type": "object",
+            "properties": {
+                "commit": {
+                    "type": "string"
+                },
+                "enabled_features": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         },
