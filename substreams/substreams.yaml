@@ -20,7 +20,7 @@ binaries:
 
 modules:
   - name: map_blobs
-    initialBlock: 7413760
+    initialBlock: 7677000
     kind: map
     inputs:
       - source: sf.beacon.type.v1.Block
@@ -28,7 +28,7 @@ modules:
       type: proto:pinax.ethereum.blobs.v1.Blobs
 
   - name: kv_out
-    initialBlock: 7413760
+    initialBlock: 7677000
     kind: map
     inputs:
       - map: map_blobs

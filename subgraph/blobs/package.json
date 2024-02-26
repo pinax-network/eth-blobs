@@ -1,0 +1,13 @@
+{
+  "name": "blobs",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ blobs",
+    "create-local": "graph create --node http://localhost:8020/ blobs",
+    "remove-local": "graph remove --node http://localhost:8020/ blobs",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 blobs",
+    "test": "graph test"
+  },
+  "dependencies": { "@graphprotocol/graph-cli": "0.68.3" }
+}

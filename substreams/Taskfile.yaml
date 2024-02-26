@@ -1,7 +1,8 @@
 version: '3'
 
 env:
-  ENDPOINT: goerli-scdm37b.mar.eosn.io:10016
+  # ENDPOINT: goerli-scdm37b.mar.eosn.io:10016
+  ENDPOINT: 172.22.27.62:10016
 
 tasks:
   protogen:
