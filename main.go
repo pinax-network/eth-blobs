@@ -16,7 +16,7 @@ import (
 
 //	@host		localhost:8080
 //	@schemes	http https
-//	@BasePath	/v1
+// //	@BasePath	/eth/v1
 
 func main() {
 

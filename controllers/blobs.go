@@ -32,22 +32,22 @@ func NewBlobsController(sinkClient pbkv.KvClient) *BlobsController {
 
 type blobsBySlotRetType []*dto.Blob
 
-// BlobsBySlot
+// BlobsByBlockId
 //
-//	@Summary	Get Blobs by slot
+//	@Summary	Get Blobs by block id
 //	@Tags		blobs
 //	@Produce	json
-//	@Param		slot	path		string	true	"Slot Number"
+//	@Param		block_id	path		string	true	"Block Id"
 //	@Success	200		{object}	response.ApiDataResponse{data=blobsBySlotRetType} "Sulccessful response"
-//	@Failure	400		{object}	response.ApiErrorResponse	"invalid_slot"	"Invalid slot
+//	@Failure	400		{object}	response.ApiErrorResponse	"invalid_block_id"	"Invalid block_id
 //	@Failure	404		{object}	response.ApiErrorResponse	"blobs_not_found"	"No blobs found"
 //	@Failure	500		{object}	response.ApiErrorResponse
-//	@Router		/blobs/by_slot/{slot} [get]
-func (bc *BlobsController) BlobsBySlot(c *gin.Context) {
+//	@Router		/eth/v1/beacon/blob_sidecars/{block_id} [get]
+func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 
-	slot := c.Param("slot")
+	block_id := c.Param("block_id")
 
-	if _, err := strconv.Atoi(slot); err != nil {
+	if _, err := strconv.Atoi(block_id); err != nil {
 		helper.ReportPublicErrorAndAbort(c, response.NewApiErrorBadRequest(INVALID_SLOT), err)
 		return
 	}
@@ -55,7 +55,7 @@ func (bc *BlobsController) BlobsBySlot(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	resp, err := bc.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "slot:" + slot})
+	resp, err := bc.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "slot:" + block_id})
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			helper.ReportPublicErrorAndAbort(c, response.GatewayTimeout, err)

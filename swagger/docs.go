@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/blobs/by_slot/{slot}": {
+        "/eth/v1/beacon/blob_sidecars/{block_id}": {
             "get": {
                 "produces": [
                     "application/json"
@@ -23,12 +23,12 @@ const docTemplate = `{
                 "tags": [
                     "blobs"
                 ],
-                "summary": "Get Blobs by slot",
+                "summary": "Get Blobs by block id",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Slot Number",
-                        "name": "slot",
+                        "description": "Block Id",
+                        "name": "block_id",
                         "in": "path",
                         "required": true
                     }
@@ -56,13 +56,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "invalid_slot",
+                        "description": "invalid_block_id\"\t\"Invalid block_id",
                         "schema": {
                             "$ref": "#/definitions/response.ApiErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "blobs_not_found",
+                        "description": "blobs_not_found\"\t\"No blobs found",
                         "schema": {
                             "$ref": "#/definitions/response.ApiErrorResponse"
                         }
@@ -280,7 +280,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
-	BasePath:         "/v1",
+	BasePath:         "",
 	Schemes:          []string{"http", "https"},
 	Title:            "Ethereum Consensus Layer Blobs REST API",
 	Description:      "This is the API for Ethereum Blobs.",

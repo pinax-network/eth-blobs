@@ -45,7 +45,7 @@ func (s *HttpServer) Initialize() {
 	s.Router.Use(ginzap.Ginzap(log.ZapLogger, time.RFC3339, true))
 
 	// prometheus metrics
-	prometheusExporter := metrics.NewPrometheusExporter(s.Router, "/v1/metrics")
+	prometheusExporter := metrics.NewPrometheusExporter(s.Router, "/metrics")
 	s.Router.Use(prometheusExporter.Instrument())
 
 	s.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
@@ -55,8 +55,8 @@ func (s *HttpServer) Initialize() {
 
 	blobsController := controllers.NewBlobsController(s.App.SinkClient)
 
-	v1 := s.Router.Group("/v1")
-	v1.GET("/blobs/by_slot/:slot", blobsController.BlobsBySlot)
+	v1 := s.Router.Group("/eth/v1")
+	v1.GET("beacon/blob_sidecars/:block_id", blobsController.BlobsByBlockId)
 }
 
 func (s *HttpServer) Run(wg *sync.WaitGroup) {

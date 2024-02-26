@@ -10,10 +10,11 @@ $ task sink
 ### Start Blobs service
 ```bash
 $ task protogen
+$ task generate:go
 $ task start:service
 ```
 
 ### Query
 ```bash
-$ curl -v http://localhost:8080/v1/blobs/by_slot/7677000
+$ curl -v http://localhost:8080/eth/v1/beacon/blob_sidecars/7677000
 ```
