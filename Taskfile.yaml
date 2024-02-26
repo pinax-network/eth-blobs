@@ -97,6 +97,11 @@ tasks:
     cmds:
       - ./{{.PACKAGE}} {{.CLI_ARGS}}
 
+  start:docker:
+    desc: "Starts a local instance of the service using Docker"
+    cmds:
+      - docker run -p 80:80 -v $(pwd)/docker-config.yaml:/app/config.yaml ghcr.io/pinax-network/blob-service:830c713 -config /app/config.yaml
+
   protogen:
     desc: "Builds types from protobuf files"
     cmds:
