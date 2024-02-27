@@ -2,6 +2,7 @@ package server
 
 import (
 	"blob-service/controllers"
+	"blob-service/swagger"
 	"context"
 	"fmt"
 	"net/http"
@@ -34,6 +35,8 @@ type HttpServer struct {
 }
 
 func (s *HttpServer) Initialize() {
+
+	swagger.SwaggerInfo.Host = s.App.Config.Application.Domain
 
 	s.Router = gin.New()
 

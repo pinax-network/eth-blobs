@@ -1,6 +1,6 @@
 application:
-  gin_mode: "debug"           # The Gin framework application level must be one of "debug" or "release"
-  http_host: "localhost:8080" # The HTTP host this application is listening on, leave empty to not start an HTTP server
-  grpc_host: "localhost:9000" # The gRPC host this application is listening on, leave empty to not start a gRPC server
-  domain: ""                  # The domain used for the Swagger documentation
-sink_address: "localhost:8000" # The gRPC host of the sink server
+  gin_mode: "debug"             # The Gin framework application level must be one of "debug" or "release"
+  http_host: "0.0.0.0:8080"     # The HTTP host this application is listening on, leave empty to not start an HTTP server
+  grpc_host: "0.0.0.0:9000"     # The gRPC host this application is listening on, leave empty to not start a gRPC server
+  domain: "localhost:8080"      # The domain used for the Swagger documentation
+sink_address: "localhost:8000"  # The gRPC host of the sink server
