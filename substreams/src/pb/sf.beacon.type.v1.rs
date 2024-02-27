@@ -18,6 +18,8 @@ pub struct Block {
     pub state_root: ::prost::alloc::vec::Vec<u8>,
     #[prost(uint64, tag="8")]
     pub proposer_index: u64,
+    #[prost(bytes="vec", tag="9")]
+    pub body_root: ::prost::alloc::vec::Vec<u8>,
     #[prost(bytes="vec", tag="30")]
     pub signature: ::prost::alloc::vec::Vec<u8>,
     #[prost(message, optional, tag="31")]

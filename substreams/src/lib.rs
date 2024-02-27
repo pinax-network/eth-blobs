@@ -25,7 +25,7 @@ fn map_blobs(blk: BeaconBlock) -> Result<Blobs, substreams::errors::Error> {
                         proposer_index: blk.proposer_index,
                         parent_root: blk.parent_root.clone(),
                         state_root: blk.state_root.clone(),
-                        body_root: blk.root.clone(),
+                        body_root: blk.body_root.clone(),
                     }),
                     signature: blk.signature.clone(),
                 }),
