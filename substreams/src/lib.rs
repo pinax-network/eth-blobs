@@ -53,8 +53,7 @@ fn kv_out(blobs: Blobs) -> Result<KvOperations, substreams::errors::Error> {
     let value = substreams::proto::encode(&blobs).expect("unable to encode blobs");
     kv_ops.push_new(key, value, 1);
 
-    // let slot = blobs.blobs.first().unwrap().slot.to_string();
-    // kv_ops.push_new("head", slot.as_bytes(), 1);
+    kv_ops.push_new("head", slot.to_be_bytes(), 1);
 
     Ok(kv_ops)
 }

@@ -40,7 +40,7 @@ tasks:
     deps:
       - build
     cmds:
-      - substreams-sink-kv inject $ENDPOINT badger3://./blobs.db substreams.yaml --server-listen-addr=:8000 --plaintext
+      - substreams-sink-kv inject $ENDPOINT badger3://./blobs.db substreams.yaml --server-listen-addr=:8000 --flush-interval 100 --plaintext
 
   sink:serve:
     desc: "Serve sunk data from KV store"

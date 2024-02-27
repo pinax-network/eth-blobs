@@ -4,6 +4,7 @@ import (
 	"blob-service/dto"
 	pbbl "blob-service/pb/pinax/ethereum/blobs/v1"
 	"context"
+	"encoding/binary"
 	"strconv"
 	"time"
 
@@ -47,13 +48,26 @@ func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 
 	block_id := c.Param("block_id")
 
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	if block_id == "head" {
+		resp, err := bc.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "head"})
+		if err != nil {
+			if ctx.Err() == context.DeadlineExceeded {
+				helper.ReportPublicErrorAndAbort(c, response.GatewayTimeout, err)
+				return
+			}
+			helper.ReportPublicErrorAndAbort(c, response.BadGateway, err)
+			return
+		}
+		block_id = strconv.FormatUint(binary.BigEndian.Uint64(resp.GetValue()), 10)
+	}
+
 	if _, err := strconv.Atoi(block_id); err != nil {
 		helper.ReportPublicErrorAndAbort(c, response.NewApiErrorBadRequest(INVALID_SLOT), err)
 		return
 	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
 
 	resp, err := bc.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "slot:" + block_id})
 	if err != nil {
