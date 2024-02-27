@@ -2,6 +2,8 @@ mod pb;
 
 use pb::pinax::ethereum::blobs::v1::{Blob, Blobs, Extra, SignedBlockHeader, Message};
 use pb::sf::beacon::r#type::v1::{block::Body::*, Block as BeaconBlock};
+use substreams_entity_change::pb::entity::EntityChanges;
+use substreams_entity_change::tables::Tables;
 use substreams_sink_kv::pb::sf::substreams::sink::kv::v1::KvOperations;
 
 #[substreams::handlers::map]
@@ -55,4 +57,21 @@ fn kv_out(blobs: Blobs) -> Result<KvOperations, substreams::errors::Error> {
     // kv_ops.push_new("head", slot.as_bytes(), 1);
 
     Ok(kv_ops)
+}
+
+
+#[substreams::handlers::map]
+fn graph_out(blobs: Blobs) -> Result<EntityChanges, substreams::errors::Error> {
+    let mut tables = Tables::new();
+
+    blobs.blobs.iter().for_each(|blob| {
+        let slot = blob.signed_block_header.as_ref().unwrap().message.as_ref().unwrap().slot;
+        tables
+            .create_row("Blob", format!("{}:{}", slot, blob.index))
+            .set("slot", slot)
+            .set("index", blob.index)
+            .set("data", blob.blob.clone());
+    });
+
+    Ok(tables.to_entity_changes())
 }

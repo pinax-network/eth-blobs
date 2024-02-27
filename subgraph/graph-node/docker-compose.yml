@@ -1,0 +1,75 @@
+version: "3"
+services:
+  graph-node:
+    container_name: graph-node-blobs
+    image: graphprotocol/graph-node:v0.34.1
+    ports:
+      - '8000:8000'
+      - '8001:8001'
+      - '8020:8020'
+      - '8030:8030'
+      - '8040:8040'
+    depends_on:
+      ipfs:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./config:/data/config
+    environment:
+      postgres_host: postgres
+      postgres_user: graph-node
+      postgres_pass: let-me-in
+      postgres_db: graph-node
+      ipfs: 'ipfs:5001'
+      GRAPH_LOG: debug
+      GRAPH_NODE_CONFIG: /data/config/config.toml
+      SUBSTREAMS_ENDPOINT: "http://172.22.27.62:10016"
+      SUBSTREAMS_API_TOKEN: "${SUBSTREAMS_API_TOKEN}"
+      RUST_BACKTRACE: full
+      ETHEREUM_POLLING_INTERVAL: 10000
+    restart: "on-failure"
+  ipfs:
+    container_name: ipfs-blobs
+    image: ipfs/kubo:v0.14.0
+    ports:
+      - "5001:5001"
+      - "5002:8080"
+    volumes:
+      - ./data/ipfs:/data/ipfs
+      - ./data/ipfs-export:/export
+  postgres:
+    container_name: postgres-blobs
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    command: ["postgres", "-cshared_preload_libraries=pg_stat_statements"]
+    environment:
+      POSTGRES_USER: graph-node
+      POSTGRES_PASSWORD: let-me-in
+      POSTGRES_DB: graph-node
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+
+  pgweb:
+    container_name: pgweb-blobs
+    image: sosedoff/pgweb:0.11.12
+    restart: on-failure
+    ports:
+      - "8081:8081"
+    command: ["pgweb", "--bind=0.0.0.0", "--listen=8081", "--binary-codec=hex"]
+    links:
+      - postgres:postgres
+    environment:
+      - DATABASE_URL=postgres://graph-node:let-me-in@postgres:5432/graph-node?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy

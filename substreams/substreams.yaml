@@ -1,11 +1,12 @@
 specVersion: v0.1.0
 package:
   name: "eth_blobs"
-  version: v0.3.0
+  version: v0.4.0
 
 imports:
   beacon: https://github.com/pinax-network/firehose-beacon/releases/download/v0.1.0/beacon-v0.1.0.spkg
   kv: https://github.com/streamingfast/substreams-sink-kv/releases/download/v2.1.6/substreams-sink-kv-v2.1.6.spkg
+  entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v1.1.0/substreams-entity-change-v1.1.0.spkg
 
 protobuf:
   files:
@@ -34,6 +35,14 @@ modules:
       - map: map_blobs
     output:
       type: proto:sf.substreams.sink.kv.v1.KVOperations
+
+  - name: graph_out
+    kind: map
+    initialBlock: 7677000
+    inputs:
+      - map: map_blobs
+    output:
+      type: proto:sf.substreams.entity.v1.EntityChanges
 
 sink:
   module: kv_out

@@ -1,0 +1,6 @@
+type Blob @entity {
+  id: ID!
+  slot: BigInt!
+  index: BigInt!
+  data: Bytes!
+}
