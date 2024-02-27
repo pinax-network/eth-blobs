@@ -154,10 +154,12 @@ tasks:
         
         # we need to add the template as additional remote if we don't already have it
         if [[ $REMOTE_TEMPLATE == "" ]]; then
+          echo "Adding template remote ..."
           git remote add template {{.TEMPLATE_REPOSITORY}}
         fi
         
         # check if we have changes on template/main by checking if there are changes we could merge
+        echo "Checking for changes to template/main..."
         git fetch --all &> /dev/null
         MERGE_RESULT=$(git merge --no-commit --no-ff template/main &>/dev/null || echo "Merge conflicts.")
 
@@ -167,20 +169,25 @@ tasks:
         fi
         
         # abort the merge, we don't actually want to do that here but just switch to a new branch with the changes later
+        echo "Reverting merge..."
         git merge --abort &>/dev/null
         
+        echo "Getting template/main hash..."
         REMOTE_HASH=$(git rev-parse --short template/main)
         TEMPLATE_BRANCH=sync/template_$REMOTE_HASH
         
+        echo "Checking for existing PR branch..."
         if [ `git rev-parse --verify $TEMPLATE_BRANCH 2>/dev/null` ]; then
           echo "Branch to sync template changes from $TEMPLATE_BRANCH already exists.";
           exit 0;
         fi
         
+        echo "Switching to PR branch..."
         git switch -c $TEMPLATE_BRANCH template/main
         
         # check if we are being run as a Github action and do have a GITHUB_TOKEN env variable set, if so we create a PR
         if [ ! -z "$GITHUB_TOKEN" ]; then
+          echo "Creating PR..."
           gh pr create -B main -H $TEMPLATE_BRANCH --title "Sync template repository up to $REMOTE_HASH" --body "The template repository has new changes, please rebase this branch onto your main and then merge the pull request to keep your features up to date."
         else
           echo "Successfully created a new branch with the template changes"
