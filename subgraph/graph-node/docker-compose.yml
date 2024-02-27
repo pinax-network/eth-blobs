@@ -26,7 +26,7 @@ services:
       ipfs: 'ipfs:5001'
       GRAPH_LOG: debug
       GRAPH_NODE_CONFIG: /data/config/config.toml
-      SUBSTREAMS_ENDPOINT: "http://172.22.27.62:10016"
+      SUBSTREAMS_ENDPOINT: "${SUBSTREAMS_ENDPOINT}"
       SUBSTREAMS_API_TOKEN: "${SUBSTREAMS_API_TOKEN}"
       RUST_BACKTRACE: full
       ETHEREUM_POLLING_INTERVAL: 10000

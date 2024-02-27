@@ -30,10 +30,14 @@ main() {
 }
 
 prepare() {
+  if [[ -z "$SUBSTREAMS_ENDPOINT" ]]; then
+    export SUBSTREAMS_ENDPOINT="http://goerli-sfdm37c.mar.eosn.io:10016"
+  fi
   if [[ -z "$SUBSTREAMS_API_TOKEN" ]]; then
     echo "Your environment is not corrrectly configured to launch Docker Compose configuration."
     echo "Some of the required environment variables are unset or empty:"
     echo " - SUBSTREAMS_API_TOKEN (Current value '${SUBSTREAMS_API_TOKEN}')"
+    echo " - SUBSTREAMS_ENDPOINT (Current value '${SUBSTREAMS_ENDPOINT}', must in the form '<scheme>://<url>:<port>')"
     echo ""
     echo "Ensure those are properly loaded in your environment"
     exit 1
