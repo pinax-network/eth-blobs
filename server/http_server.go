@@ -53,6 +53,7 @@ func (s *HttpServer) Initialize() {
 
 	s.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	s.Router.GET("/version", controllers.Version)
+	s.Router.GET("/health", controllers.Health)
 	s.Router.NoRoute(NoRoute)
 	s.Router.NoMethod(NoMethod)
 
