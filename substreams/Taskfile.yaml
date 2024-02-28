@@ -52,4 +52,4 @@ tasks:
   start:docker:
     desc: "Starts the substreams module in a Docker container"
     cmds:
-      - docker run -p 8000:8000 -v $(pwd)/blobs.db:/app/blobs.db ghcr.io/streamingfast/substreams-sink-kv:b38cd28 inject $ENDPOINT badger3:///app/blobs.db https://github.com/pinax-network/blob-service/releases/download/v0.3.0/eth-blobs-v0.3.0.spkg --server-listen-addr=:8000 --plaintext
+      - docker run -p 8000:8000 -v $(pwd)/blobs.db:/app/blobs.db ghcr.io/streamingfast/substreams-sink-kv:b38cd28 inject $ENDPOINT badger3:///app/blobs.db https://github.com/pinax-network/blob-service/releases/download/v0.5.0/eth-blobs-v0.5.0.spkg --server-listen-addr=:8000 --plaintext

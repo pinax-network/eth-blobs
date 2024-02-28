@@ -100,7 +100,7 @@ tasks:
   start:docker:
     desc: "Starts a local instance of the service using Docker"
     cmds:
-      - docker run -p 80:80 -v $(pwd)/docker-config.yaml:/app/config.yaml ghcr.io/pinax-network/blob-service:830c713 -config /app/config.yaml
+      - docker run -p 8080:8080 -v $(pwd)/docker-config.yaml:/app/config.yaml ghcr.io/pinax-network/blob-service:v0.5.0 -config /app/config.yaml
 
   protogen:
     desc: "Builds types from protobuf files"
