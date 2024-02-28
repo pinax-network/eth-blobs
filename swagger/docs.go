@@ -27,10 +27,20 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Block identifier. Can be one of: ",
+                        "description": "Block identifier. Can be one of: 'head', slot number, hex encoded blockRoot with 0x prefix",
                         "name": "block_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified.",
+                        "name": "indices",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -144,9 +154,6 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
-                "extra": {
-                    "$ref": "#/definitions/dto.Extra"
-                },
                 "index": {
                     "type": "integer"
                 },
@@ -173,23 +180,6 @@ const docTemplate = `{
                 },
                 "signed_block_header": {
                     "$ref": "#/definitions/dto.SignedBlockHeader"
-                }
-            }
-        },
-        "dto.Extra": {
-            "type": "object",
-            "properties": {
-                "block_number": {
-                    "type": "integer"
-                },
-                "root": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "timestamp": {
-                    "$ref": "#/definitions/dto.Timestamp"
                 }
             }
         },
@@ -233,17 +223,6 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
-                }
-            }
-        },
-        "dto.Timestamp": {
-            "type": "object",
-            "properties": {
-                "nanos": {
-                    "type": "integer"
-                },
-                "seconds": {
-                    "type": "integer"
                 }
             }
         },

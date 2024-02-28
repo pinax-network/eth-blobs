@@ -2,11 +2,13 @@ package controllers
 
 import (
 	"blob-service/dto"
+	"blob-service/internal"
 	pbbl "blob-service/pb/pinax/ethereum/blobs/v1"
 	"context"
 	"encoding/binary"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	pbkv "github.com/streamingfast/substreams-sink-kv/pb/substreams/sink/kv/v1"
@@ -59,7 +61,8 @@ func (bc *BlobsController) parseBlockId(ctx context.Context, block_id string) (u
 //	@Summary	Get Blobs by block id
 //	@Tags		blobs
 //	@Produce	json
-//	@Param		block_id	path		string	true	"Block identifier. Can be one of: "head", <slot>, <hex encoded blockRoot with 0x prefix>."
+//	@Param		block_id	path		string		true	"Block identifier. Can be one of: 'head', slot number, hex encoded blockRoot with 0x prefix"
+//	@Param		indices		query	 	[]string 	false 	"Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified."
 //	@Success	200		{object}	response.ApiDataResponse{data=blobsBySlotRetType} "Successful response"
 //	@Failure	400		{object}	response.ApiErrorResponse	"invalid_block_id"	"Invalid block_id
 //	@Failure	404		{object}	response.ApiErrorResponse	"blobs_not_found"	"No blobs found"
@@ -68,6 +71,10 @@ func (bc *BlobsController) parseBlockId(ctx context.Context, block_id string) (u
 func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 
 	block_id := c.Param("block_id")
+	indices := strings.Split(c.Query("indices"), ",")
+	if len(indices) == 1 && indices[0] == "" {
+		indices = []string{}
+	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -111,7 +118,9 @@ func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 
 	resBlobs := []*dto.Blob{}
 	for _, blob := range blobs.Blobs {
-		resBlobs = append(resBlobs, dto.NewBlob(blob))
+		if len(indices) == 0 || internal.Contains(indices, fmt.Sprintf("%d", blob.Index)) {
+			resBlobs = append(resBlobs, dto.NewBlob(blob))
+		}
 	}
 
 	response.OkDataResponse(c, &response.ApiDataResponse{Data: resBlobs})

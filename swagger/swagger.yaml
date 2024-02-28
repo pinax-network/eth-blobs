@@ -16,8 +16,6 @@ definitions:
         items:
           type: integer
         type: array
-      extra:
-        $ref: '#/definitions/dto.Extra'
       index:
         type: integer
       kzg_commitment:
@@ -36,17 +34,6 @@ definitions:
         type: array
       signed_block_header:
         $ref: '#/definitions/dto.SignedBlockHeader'
-    type: object
-  dto.Extra:
-    properties:
-      block_number:
-        type: integer
-      root:
-        items:
-          type: integer
-        type: array
-      timestamp:
-        $ref: '#/definitions/dto.Timestamp'
     type: object
   dto.Message:
     properties:
@@ -75,13 +62,6 @@ definitions:
         items:
           type: integer
         type: array
-    type: object
-  dto.Timestamp:
-    properties:
-      nanos:
-        type: integer
-      seconds:
-        type: integer
     type: object
   response.ApiDataResponse:
     properties:
@@ -114,11 +94,20 @@ paths:
   /eth/v1/beacon/blob_sidecars/{block_id}:
     get:
       parameters:
-      - description: 'Block identifier. Can be one of: '
+      - description: 'Block identifier. Can be one of: ''head'', slot number, hex
+          encoded blockRoot with 0x prefix'
         in: path
         name: block_id
         required: true
         type: string
+      - collectionFormat: csv
+        description: Array of indices for blob sidecars to request for in the specified
+          block. Returns all blob sidecars in the block if not specified.
+        in: query
+        items:
+          type: string
+        name: indices
+        type: array
       produces:
       - application/json
       responses:
