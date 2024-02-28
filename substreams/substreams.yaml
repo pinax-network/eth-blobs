@@ -1,7 +1,7 @@
 specVersion: v0.1.0
 package:
   name: "eth_blobs"
-  version: v0.5.0
+  version: v0.6.0
 
 imports:
   beacon: https://github.com/pinax-network/firehose-beacon/releases/download/v0.1.1/beacon-v0.1.1.spkg
@@ -21,7 +21,7 @@ binaries:
 
 modules:
   - name: map_blobs
-    initialBlock: 7718200
+    initialBlock: 7413760
     kind: map
     inputs:
       - source: sf.substreams.v1.Clock
@@ -30,7 +30,7 @@ modules:
       type: proto:pinax.ethereum.blobs.v1.Slot
 
   - name: kv_out
-    initialBlock: 7718200
+    initialBlock: 7413760
     kind: map
     inputs:
       - map: map_blobs
@@ -39,7 +39,7 @@ modules:
 
   - name: graph_out
     kind: map
-    initialBlock: 7718200
+    initialBlock: 7413760
     inputs:
       - map: map_blobs
     output:
