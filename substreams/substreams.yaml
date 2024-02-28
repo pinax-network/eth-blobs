@@ -21,15 +21,16 @@ binaries:
 
 modules:
   - name: map_blobs
-    initialBlock: 7677000
+    initialBlock: 7718200
     kind: map
     inputs:
+      - source: sf.substreams.v1.Clock
       - source: sf.beacon.type.v1.Block
     output:
-      type: proto:pinax.ethereum.blobs.v1.Blobs
+      type: proto:pinax.ethereum.blobs.v1.Slot
 
   - name: kv_out
-    initialBlock: 7677000
+    initialBlock: 7718200
     kind: map
     inputs:
       - map: map_blobs
@@ -38,7 +39,7 @@ modules:
 
   - name: graph_out
     kind: map
-    initialBlock: 7677000
+    initialBlock: 7718200
     inputs:
       - map: map_blobs
     output:

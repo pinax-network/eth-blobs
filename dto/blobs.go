@@ -41,7 +41,7 @@ func (s StrU64) MarshalJSON() ([]byte, error) {
 	return json.Marshal(strconv.FormatUint(uint64(s), 10))
 }
 
-func NewBlob(blob *pbbl.Blob) *Blob {
+func NewBlob(blob *pbbl.Blob, slot *pbbl.Slot) *Blob {
 	return &Blob{
 		Index:         StrU64(blob.Index),
 		Blob:          blob.Blob,
@@ -49,13 +49,13 @@ func NewBlob(blob *pbbl.Blob) *Blob {
 		KzgProof:      blob.KzgProof,
 		SignedBlockHeader: SignedBlockHeader{
 			Message: &Message{
-				Slot:          StrU64(blob.Slot),
-				ProposerIndex: StrU64(blob.ProposerIndex),
-				ParentRoot:    blob.ParentRoot,
-				StateRoot:     blob.StateRoot,
-				BodyRoot:      blob.BodyRoot,
+				Slot:          StrU64(slot.Slot),
+				ProposerIndex: StrU64(slot.ProposerIndex),
+				ParentRoot:    slot.ParentRoot,
+				StateRoot:     slot.StateRoot,
+				BodyRoot:      slot.BodyRoot,
 			},
-			Signature: blob.Signature,
+			Signature: slot.Signature,
 		},
 		KzgCommitmentInclusionProof: convertToHexBytesSlice(blob.KzgCommitmentInclusionProof),
 	}
