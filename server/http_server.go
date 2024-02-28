@@ -2,6 +2,7 @@ package server
 
 import (
 	"blob-service/controllers"
+	"blob-service/services"
 	"blob-service/swagger"
 	"context"
 	"fmt"
@@ -53,14 +54,17 @@ func (s *HttpServer) Initialize() {
 
 	s.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	s.Router.GET("/version", controllers.Version)
-	s.Router.GET("/health", controllers.Health)
 	s.Router.NoRoute(NoRoute)
 	s.Router.NoMethod(NoMethod)
 
-	blobsController := controllers.NewBlobsController(s.App.SinkClient)
+	blobsService := services.NewBlobsService(s.App.SinkClient)
+	blobsController := controllers.NewBlobsController(blobsService)
+	healthController := controllers.NewHealthController(blobsService)
 
 	v1 := s.Router.Group("/eth/v1")
 	v1.GET("beacon/blob_sidecars/:block_id", blobsController.BlobsByBlockId)
+
+	s.Router.GET("/health", healthController.Health)
 }
 
 func (s *HttpServer) Run(wg *sync.WaitGroup) {

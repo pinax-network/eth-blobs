@@ -1,4 +1,13 @@
 definitions:
+  controllers.HealthResponse:
+    properties:
+      detail:
+        type: string
+      head:
+        type: integer
+      status:
+        type: string
+    type: object
   controllers.VersionResponse:
     properties:
       commit:
@@ -123,11 +132,11 @@ paths:
                   type: array
               type: object
         "400":
-          description: "invalid_block_id\"\t\"Invalid block_id"
+          description: "invalid_slot\"\t\"Invalid block id"
           schema:
             $ref: '#/definitions/response.ApiErrorResponse'
         "404":
-          description: "blobs_not_found\"\t\"No blobs found"
+          description: "slot_not_found\"\t\"Slot not found"
           schema:
             $ref: '#/definitions/response.ApiErrorResponse'
         "500":
@@ -137,10 +146,24 @@ paths:
       summary: Get Blobs by block id
       tags:
       - blobs
+  /health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.HealthResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ApiErrorResponse'
+      summary: Returns health status of this API.
+      tags:
+      - health
   /version:
     get:
-      consumes:
-      - application/json
       produces:
       - application/json
       responses:

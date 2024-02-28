@@ -66,13 +66,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "invalid_block_id\"\t\"Invalid block_id",
+                        "description": "invalid_slot\"\t\"Invalid block id",
                         "schema": {
                             "$ref": "#/definitions/response.ApiErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "blobs_not_found\"\t\"No blobs found",
+                        "description": "slot_not_found\"\t\"Slot not found",
                         "schema": {
                             "$ref": "#/definitions/response.ApiErrorResponse"
                         }
@@ -86,11 +86,33 @@ const docTemplate = `{
                 }
             }
         },
-        "/version": {
+        "/health": {
             "get": {
-                "consumes": [
+                "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Returns health status of this API.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.HealthResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/version": {
+            "get": {
                 "produces": [
                     "application/json"
                 ],
@@ -128,6 +150,20 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "controllers.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "type": "string"
+                },
+                "head": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "controllers.VersionResponse": {
             "type": "object",
             "properties": {
