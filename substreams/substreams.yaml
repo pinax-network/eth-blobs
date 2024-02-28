@@ -1,7 +1,7 @@
 specVersion: v0.1.0
 package:
   name: "eth_blobs"
-  version: v0.4.0
+  version: v0.5.0
 
 imports:
   beacon: https://github.com/pinax-network/firehose-beacon/releases/download/v0.1.1/beacon-v0.1.1.spkg

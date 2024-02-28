@@ -5,6 +5,7 @@ import (
 	pbbl "blob-service/pb/pinax/ethereum/blobs/v1"
 	"context"
 	"encoding/binary"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -33,13 +34,33 @@ func NewBlobsController(sinkClient pbkv.KvClient) *BlobsController {
 
 type blobsBySlotRetType []*dto.Blob
 
+func (bc *BlobsController) parseBlockId(ctx context.Context, block_id string) (uint64, error) {
+	if block_id == "head" {
+		resp, err := bc.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "head"})
+		if err != nil {
+			return 0, err
+		}
+		return binary.BigEndian.Uint64(resp.GetValue()), nil
+	}
+
+	if block_id[:2] == "0x" {
+		resp, err := bc.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "block_root:" + block_id})
+		if err != nil {
+			return 0, err
+		}
+		return binary.BigEndian.Uint64(resp.GetValue()), nil
+	}
+
+	return strconv.ParseUint(block_id, 10, 64)
+}
+
 // BlobsByBlockId
 //
 //	@Summary	Get Blobs by block id
 //	@Tags		blobs
 //	@Produce	json
-//	@Param		block_id	path		string	true	"Block Id"
-//	@Success	200		{object}	response.ApiDataResponse{data=blobsBySlotRetType} "Sulccessful response"
+//	@Param		block_id	path		string	true	"Block identifier. Can be one of: "head", <slot>, <hex encoded blockRoot with 0x prefix>."
+//	@Success	200		{object}	response.ApiDataResponse{data=blobsBySlotRetType} "Successful response"
 //	@Failure	400		{object}	response.ApiErrorResponse	"invalid_block_id"	"Invalid block_id
 //	@Failure	404		{object}	response.ApiErrorResponse	"blobs_not_found"	"No blobs found"
 //	@Failure	500		{object}	response.ApiErrorResponse
@@ -51,25 +72,22 @@ func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	if block_id == "head" {
-		resp, err := bc.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "head"})
-		if err != nil {
-			if ctx.Err() == context.DeadlineExceeded {
-				helper.ReportPublicErrorAndAbort(c, response.GatewayTimeout, err)
-				return
-			}
-			helper.ReportPublicErrorAndAbort(c, response.BadGateway, err)
+	slot, err := bc.parseBlockId(ctx, block_id)
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			helper.ReportPublicErrorAndAbort(c, response.GatewayTimeout, err)
 			return
 		}
-		block_id = strconv.FormatUint(binary.BigEndian.Uint64(resp.GetValue()), 10)
-	}
-
-	if _, err := strconv.Atoi(block_id); err != nil {
-		helper.ReportPublicErrorAndAbort(c, response.NewApiErrorBadRequest(INVALID_SLOT), err)
+		st, ok := status.FromError(err)
+		if ok && st.Code() == codes.NotFound {
+			helper.ReportPublicErrorAndAbort(c, response.NewApiErrorNotFound(NOT_FOUND_BLOBS), err)
+			return
+		}
+		helper.ReportPublicErrorAndAbort(c, response.BadGateway, err)
 		return
 	}
 
-	resp, err := bc.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "slot:" + block_id})
+	resp, err := bc.sinkClient.Get(ctx, &pbkv.GetRequest{Key: fmt.Sprintf("slot:%d", slot)})
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			helper.ReportPublicErrorAndAbort(c, response.GatewayTimeout, err)

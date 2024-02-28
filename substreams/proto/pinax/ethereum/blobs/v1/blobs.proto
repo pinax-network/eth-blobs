@@ -13,25 +13,16 @@ message Blob {
   bytes blob = 2;
   bytes kzg_commitment = 3;
   bytes kzg_proof = 4;
-  SignedBlockHeader signed_block_header = 5;
   repeated bytes kzg_commitment_inclusion_proof = 6;
-  Extra extra = 7;
-}
 
-message SignedBlockHeader {
-  Message message = 1;
-  bytes signature = 2;
-}
+  uint64 slot = 10;
+  uint64 proposer_index = 11;
+  bytes parent_root = 12;
+  bytes state_root = 13;
+  bytes body_root = 14;
+  bytes signature = 15;
 
-message Message {
-  uint64 slot = 1;
-  uint64 proposer_index = 2;
-  bytes parent_root = 3;
-  bytes state_root = 4;
-  bytes body_root = 5;
-}
-
-message Extra {
-  uint64 block_number = 1;
-  google.protobuf.Timestamp timestamp = 2;
+  bytes root = 20;
+  uint64 block_number = 21;
+  google.protobuf.Timestamp timestamp = 22;
 }

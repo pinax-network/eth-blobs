@@ -14,7 +14,6 @@ type Blob struct {
 	KzgProof                    HexBytes          `json:"kzg_proof"`
 	SignedBlockHeader           SignedBlockHeader `json:"signed_block_header"`
 	KzgCommitmentInclusionProof []HexBytes        `json:"kzg_commitment_inclusion_proof"`
-	Extra                       Extra             `json:"extra"`
 }
 
 type SignedBlockHeader struct {
@@ -28,16 +27,6 @@ type Message struct {
 	ParentRoot    HexBytes `json:"parent_root"`
 	StateRoot     HexBytes `json:"state_root"`
 	BodyRoot      HexBytes `json:"body_root"`
-}
-
-type Extra struct {
-	BlockNumber StrU64     `json:"block_number"`
-	Timestamp   *Timestamp `json:"timestamp"`
-}
-
-type Timestamp struct {
-	Seconds int64 `json:"seconds,omitempty"`
-	Nanos   int32 `json:"nanos,omitempty"`
 }
 
 type HexBytes []byte
@@ -60,22 +49,15 @@ func NewBlob(blob *pbbl.Blob) *Blob {
 		KzgProof:      blob.KzgProof,
 		SignedBlockHeader: SignedBlockHeader{
 			Message: &Message{
-				Slot:          StrU64(blob.SignedBlockHeader.Message.Slot),
-				ProposerIndex: StrU64(blob.SignedBlockHeader.Message.ProposerIndex),
-				ParentRoot:    blob.SignedBlockHeader.Message.ParentRoot,
-				StateRoot:     blob.SignedBlockHeader.Message.StateRoot,
-				BodyRoot:      blob.SignedBlockHeader.Message.BodyRoot,
+				Slot:          StrU64(blob.Slot),
+				ProposerIndex: StrU64(blob.ProposerIndex),
+				ParentRoot:    blob.ParentRoot,
+				StateRoot:     blob.StateRoot,
+				BodyRoot:      blob.BodyRoot,
 			},
-			Signature: blob.SignedBlockHeader.Signature,
+			Signature: blob.Signature,
 		},
 		KzgCommitmentInclusionProof: convertToHexBytesSlice(blob.KzgCommitmentInclusionProof),
-		Extra: Extra{
-			BlockNumber: StrU64(blob.Extra.BlockNumber),
-			Timestamp: &Timestamp{
-				Seconds: blob.Extra.Timestamp.Seconds,
-				Nanos:   blob.Extra.Timestamp.Nanos,
-			},
-		},
 	}
 }
 

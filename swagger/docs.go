@@ -27,7 +27,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Block Id",
+                        "description": "Block identifier. Can be one of: ",
                         "name": "block_id",
                         "in": "path",
                         "required": true
@@ -35,7 +35,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Sulccessful response",
+                        "description": "Successful response",
                         "schema": {
                             "allOf": [
                                 {
@@ -181,6 +181,12 @@ const docTemplate = `{
             "properties": {
                 "block_number": {
                     "type": "integer"
+                },
+                "root": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "timestamp": {
                     "$ref": "#/definitions/dto.Timestamp"

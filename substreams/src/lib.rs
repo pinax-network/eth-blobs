@@ -1,7 +1,8 @@
 mod pb;
 
-use pb::pinax::ethereum::blobs::v1::{Blob, Blobs, Extra, SignedBlockHeader, Message};
+use pb::pinax::ethereum::blobs::v1::{Blob, Blobs};
 use pb::sf::beacon::r#type::v1::{block::Body::*, Block as BeaconBlock};
+use substreams::Hex;
 use substreams_entity_change::pb::entity::EntityChanges;
 use substreams_entity_change::tables::Tables;
 use substreams_sink_kv::pb::sf::substreams::sink::kv::v1::KvOperations;
@@ -19,20 +20,17 @@ fn map_blobs(blk: BeaconBlock) -> Result<Blobs, substreams::errors::Error> {
                 kzg_commitment: b.kzg_commitment,
                 kzg_proof: b.kzg_proof,
                 kzg_commitment_inclusion_proof: b.kzg_commitment_inclusion_proof,
-                signed_block_header: Some(SignedBlockHeader {
-                    message: Some(Message {
-                        slot: blk.slot,
-                        proposer_index: blk.proposer_index,
-                        parent_root: blk.parent_root.clone(),
-                        state_root: blk.state_root.clone(),
-                        body_root: blk.body_root.clone(),
-                    }),
-                    signature: blk.signature.clone(),
-                }),
-                extra: Some(Extra {
-                    block_number: body.execution_payload.as_ref().cloned().unwrap_or_default().block_number,
-                    timestamp: blk.timestamp.clone(),
-                }),
+
+                slot: blk.slot,
+                proposer_index: blk.proposer_index,
+                parent_root: blk.parent_root.clone(),
+                state_root: blk.state_root.clone(),
+                body_root: blk.body_root.clone(),
+                signature: blk.signature.clone(),
+
+                block_number: body.execution_payload.as_ref().unwrap().block_number,
+                timestamp: blk.timestamp.clone(),
+                root: blk.root.clone(),
             })
             .collect(),
         _ => vec![],
@@ -48,10 +46,13 @@ fn kv_out(blobs: Blobs) -> Result<KvOperations, substreams::errors::Error> {
         return Ok(kv_ops);
     }
 
-    let slot = blobs.blobs.first().unwrap().signed_block_header.as_ref().unwrap().message.as_ref().unwrap().slot;
+    let slot = blobs.blobs.first().as_ref().unwrap().slot;
     let key = format!("slot:{}", slot);
     let value = substreams::proto::encode(&blobs).expect("unable to encode blobs");
     kv_ops.push_new(key, value, 1);
+
+    let block_root_key = format!("block_root:0x{}", Hex::encode(blobs.blobs.first().as_ref().unwrap().root.clone()));
+    kv_ops.push_new(block_root_key, slot.to_be_bytes(), 1);
 
     kv_ops.push_new("head", slot.to_be_bytes(), 1);
 
@@ -64,10 +65,9 @@ fn graph_out(blobs: Blobs) -> Result<EntityChanges, substreams::errors::Error> {
     let mut tables = Tables::new();
 
     blobs.blobs.iter().for_each(|blob| {
-        let slot = blob.signed_block_header.as_ref().unwrap().message.as_ref().unwrap().slot;
         tables
-            .create_row("Blob", format!("{}:{}", slot, blob.index))
-            .set("slot", slot)
+            .create_row("Blob", format!("{}:{}", blob.slot, blob.index))
+            .set("slot", blob.slot)
             .set("index", blob.index)
             .set("data", blob.blob.clone());
     });
