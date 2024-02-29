@@ -31,7 +31,7 @@ main() {
 
 prepare() {
   if [[ -z "$SUBSTREAMS_ENDPOINT" ]]; then
-    export SUBSTREAMS_ENDPOINT="http://goerli-sfdm37c.mar.eosn.io:10016"
+    export SUBSTREAMS_ENDPOINT="https://goerli-cl.substreams.pinax.network:443"
   fi
   if [[ -z "$SUBSTREAMS_API_TOKEN" ]]; then
     echo "Your environment is not corrrectly configured to launch Docker Compose configuration."

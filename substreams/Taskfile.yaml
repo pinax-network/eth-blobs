@@ -1,7 +1,7 @@
 version: '3'
 
 env:
-  ENDPOINT: goerli-sfdm37c.mar.eosn.io:10016
+  ENDPOINT: goerli-cl.substreams.pinax.network:443
 
 tasks:
   protogen:
@@ -26,21 +26,21 @@ tasks:
     deps:
       - build
     cmds:
-      - substreams run -e $ENDPOINT map_blobs -s -10 --plaintext
+      - substreams run -e $ENDPOINT map_blobs -s -10
 
   gui:
     desc: "Runs the substreams module with the GUI"
     deps:
       - build
     cmds:
-      - substreams gui -e $ENDPOINT map_blobs -s -10 --plaintext
+      - substreams gui -e $ENDPOINT map_blobs -s -10
 
   sink:
     desc: "Sinks substreams module into KV store"
     deps:
       - build
     cmds:
-      - substreams-sink-kv inject $ENDPOINT badger3://./blobs.db substreams.yaml --server-listen-addr=:8000 --flush-interval 100 --plaintext
+      - substreams-sink-kv inject $ENDPOINT badger3://./blobs.db substreams.yaml --server-listen-addr=:8000 --flush-interval 100
 
   sink:serve:
     desc: "Serve sunk data from KV store"
@@ -52,4 +52,4 @@ tasks:
   start:docker:
     desc: "Starts the substreams module in a Docker container"
     cmds:
-      - docker run -p 8000:8000 -v $(pwd)/blobs.db:/app/blobs.db ghcr.io/streamingfast/substreams-sink-kv:b38cd28 inject $ENDPOINT badger3:///app/blobs.db https://github.com/pinax-network/blob-service/releases/download/v0.6.1/eth-blobs-v0.6.1.spkg --server-listen-addr=:8000 --plaintext
+      - docker run -p 8000:8000 -v $(pwd)/blobs.db:/app/blobs.db ghcr.io/streamingfast/substreams-sink-kv:b38cd28 inject $ENDPOINT badger3:///app/blobs.db https://github.com/pinax-network/blob-service/releases/download/v0.6.1/eth-blobs-v0.6.1.spkg --server-listen-addr=:8000
