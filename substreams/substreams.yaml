@@ -1,7 +1,18 @@
 specVersion: v0.1.0
 package:
   name: "eth_blobs"
-  version: v0.6.0
+  version: v0.6.1
+  image: ./logo.png
+  doc: |
+    This substreams package lets you stream Consensus Layer EIP-4844 blobs with attached meta data.
+
+    Amoung the supported chains are:
+    - mainnet-cl: eth-cl.substreams.pinax.network:443
+    - goerli-cl: goerli-cl.substreams.pinax.network:443
+    - sepolia-cl: sepolia-cl.substreams.pinax.network:443
+    - holesky-cl: holesky-cl.substreams.pinax.network:443
+    - gnosis-cl: gnosis-cl.substreams.pinax.network:443
+    - chiado-cl: chiado-cl.substreams.pinax.network:443
 
 imports:
   beacon: https://github.com/pinax-network/firehose-beacon/releases/download/v0.1.1/beacon-v0.1.1.spkg
@@ -21,7 +32,7 @@ binaries:
 
 modules:
   - name: map_blobs
-    initialBlock: 7413760
+    # initialBlock: 7413760
     kind: map
     inputs:
       - source: sf.substreams.v1.Clock
@@ -30,7 +41,7 @@ modules:
       type: proto:pinax.ethereum.blobs.v1.Slot
 
   - name: kv_out
-    initialBlock: 7413760
+    # initialBlock: 7413760
     kind: map
     inputs:
       - map: map_blobs
@@ -39,7 +50,7 @@ modules:
 
   - name: graph_out
     kind: map
-    initialBlock: 7413760
+    # initialBlock: 7413760
     inputs:
       - map: map_blobs
     output:
