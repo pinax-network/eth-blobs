@@ -38,6 +38,8 @@ type HttpServer struct {
 func (s *HttpServer) Initialize() {
 
 	swagger.SwaggerInfo.Host = s.App.Config.Application.Domain
+	swagger.SwaggerInfo.Title = s.App.Config.ChainName + " Blobs REST API"
+	swagger.SwaggerInfo.Description = "Use this API to get " + s.App.Config.ChainName + " EIP-4844 blobs as a drop-in replacement for Consensus Layer clients API."
 
 	s.Router = gin.New()
 
