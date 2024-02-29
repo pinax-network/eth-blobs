@@ -25,6 +25,7 @@ fn map_blobs(clock: Clock, blk: BeaconBlock) -> Result<Slot, substreams::errors:
 
     Ok(Slot {
         slot: blk.slot,
+        spec: blk.spec,
         proposer_index: blk.proposer_index,
         parent_root: blk.parent_root.clone(),
         state_root: blk.state_root.clone(),

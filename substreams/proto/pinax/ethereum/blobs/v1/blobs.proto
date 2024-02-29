@@ -6,18 +6,28 @@ option go_package = "github.com/pinax-network/blobs-service/pb/pinax/ethereum/bl
 
 import "google/protobuf/timestamp.proto";
 
+enum Spec {
+  UNSPECIFIED = 0;
+  PHASE0 = 1;
+  ALTAIR = 2;
+  BELLATRIX = 3;
+  CAPELLA = 4;
+  DENEB = 5;
+}
+
 message Slot {
   uint64 slot = 1;
-  bytes root = 2;
-  uint64 proposer_index = 3;
-  bytes parent_root = 4;
-  bytes state_root = 5;
-  bytes body_root = 6;
-  bytes signature = 7;
-  uint64 block_number = 8;
-  google.protobuf.Timestamp timestamp = 9;
+  Spec spec = 2;
+  bytes root = 3;
+  uint64 proposer_index = 4;
+  bytes parent_root = 5;
+  bytes state_root = 6;
+  bytes body_root = 7;
+  bytes signature = 8;
+  uint64 block_number = 9;
+  google.protobuf.Timestamp timestamp = 10;
 
-  repeated Blob blobs = 10;
+  repeated Blob blobs = 20;
 }
 
 message Blob {
