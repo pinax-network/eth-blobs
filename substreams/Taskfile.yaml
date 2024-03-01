@@ -35,6 +35,13 @@ tasks:
     cmds:
       - substreams gui -e $ENDPOINT map_blobs -s -10
 
+  gui:graph:
+    desc: "Runs the substreams graph_out module with the GUI"
+    deps:
+      - build
+    cmds:
+      - substreams gui -e $ENDPOINT graph_out -s -10
+
   sink:
     desc: "Sinks substreams module into KV store"
     deps:

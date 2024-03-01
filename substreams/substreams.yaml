@@ -1,7 +1,7 @@
 specVersion: v0.1.0
 package:
   name: "eth_blobs"
-  version: v0.6.1
+  version: v0.6.2
   image: ./logo.png
   doc: |
     This substreams package lets you stream Consensus Layer EIP-4844 blobs with attached meta data.
@@ -32,7 +32,7 @@ binaries:
 
 modules:
   - name: map_blobs
-    # initialBlock: 7413760
+    initialBlock: 7735000
     kind: map
     inputs:
       - source: sf.beacon.type.v1.Block
@@ -49,7 +49,7 @@ modules:
 
   - name: graph_out
     kind: map
-    # initialBlock: 7413760
+    initialBlock: 7735000
     inputs:
       - map: map_blobs
     output:

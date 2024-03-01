@@ -2,5 +2,14 @@ type Blob @entity {
   id: ID!
   slot: BigInt!
   index: BigInt!
-  data: Bytes!
+  blob: Bytes!
+  kzg_commitment: Bytes!
+  kzg_proof: Bytes!
+  signature: Bytes!
+  spec: String!
+  proposer_index: BigInt!
+  parent_root: Bytes!
+  state_root: Bytes!
+  body_root: Bytes!
+  timestamp: String
 }
