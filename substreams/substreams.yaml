@@ -6,7 +6,7 @@ package:
   doc: |
     This substreams package lets you stream Consensus Layer EIP-4844 blobs with attached meta data.
 
-    Amoung the supported chains are:
+    Among the supported chains are:
     - mainnet-cl: eth-cl.substreams.pinax.network:443
     - goerli-cl: goerli-cl.substreams.pinax.network:443
     - sepolia-cl: sepolia-cl.substreams.pinax.network:443

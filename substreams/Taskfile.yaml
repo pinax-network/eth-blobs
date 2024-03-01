@@ -40,7 +40,13 @@ tasks:
     deps:
       - build
     cmds:
-      - substreams-sink-kv inject $ENDPOINT badger3://./blobs.db substreams.yaml --server-listen-addr=:8000 --flush-interval 100
+      - substreams-sink-kv inject
+        $ENDPOINT
+        badger3://./blobs.db
+        substreams.yaml
+        --server-listen-addr=:8000
+        --flush-interval 100
+        --undo-buffer-size 1
 
   sink:serve:
     desc: "Serve sunk data from KV store"
@@ -60,4 +66,6 @@ tasks:
         $ENDPOINT
         badger3:///app/blobs.db
         https://github.com/pinax-network/blob-service/releases/download/v0.6.1/eth-blobs-v0.6.1.spkg
+        7733899:8733899
         --server-listen-addr=:8000
+        --undo-buffer-size 1
