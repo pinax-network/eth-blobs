@@ -18,8 +18,6 @@ pub struct Slot {
     pub body_root: ::prost::alloc::vec::Vec<u8>,
     #[prost(bytes="vec", tag="8")]
     pub signature: ::prost::alloc::vec::Vec<u8>,
-    #[prost(uint64, tag="9")]
-    pub block_number: u64,
     #[prost(message, optional, tag="10")]
     pub timestamp: ::core::option::Option<::prost_types::Timestamp>,
     #[prost(message, repeated, tag="20")]

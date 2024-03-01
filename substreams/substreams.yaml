@@ -35,7 +35,6 @@ modules:
     # initialBlock: 7413760
     kind: map
     inputs:
-      - source: sf.substreams.v1.Clock
       - source: sf.beacon.type.v1.Block
     output:
       type: proto:pinax.ethereum.blobs.v1.Slot

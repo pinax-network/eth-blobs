@@ -1,13 +1,13 @@
 mod pb;
 
-use pb::pinax::ethereum::blobs::v1::{Blob, Slot};
+use pb::pinax::ethereum::blobs::v1::{Blob, Slot, Spec};
 use pb::sf::beacon::r#type::v1::{block::Body::*, Block as BeaconBlock};
-use substreams::{Hex, pb::substreams::Clock};
+use substreams::Hex;
 use substreams_entity_change::{tables::Tables, pb::entity::EntityChanges};
 use substreams_sink_kv::pb::sf::substreams::sink::kv::v1::KvOperations;
 
 #[substreams::handlers::map]
-fn map_blobs(clock: Clock, blk: BeaconBlock) -> Result<Slot, substreams::errors::Error> {
+fn map_blobs(blk: BeaconBlock) -> Result<Slot, substreams::errors::Error> {
     let blobs = match blk.body.unwrap() {
         Deneb(body) => body
             .embedded_blobs
@@ -31,9 +31,7 @@ fn map_blobs(clock: Clock, blk: BeaconBlock) -> Result<Slot, substreams::errors:
         state_root: blk.state_root.clone(),
         body_root: blk.body_root.clone(),
         signature: blk.signature.clone(),
-
         root: blk.root.clone(),
-        block_number: clock.number,
         timestamp: blk.timestamp.clone(),
 
         blobs

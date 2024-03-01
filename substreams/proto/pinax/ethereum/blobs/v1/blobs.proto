@@ -24,7 +24,6 @@ message Slot {
   bytes state_root = 6;
   bytes body_root = 7;
   bytes signature = 8;
-  uint64 block_number = 9;
   google.protobuf.Timestamp timestamp = 10;
 
   repeated Blob blobs = 20;
