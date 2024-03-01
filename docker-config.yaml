@@ -3,5 +3,9 @@ application:
   http_host: "0.0.0.0:8080" # The HTTP host this application is listening on, leave empty to not start an HTTP server
   # grpc_host: "localhost:9000" # The gRPC host this application is listening on, leave empty to not start a gRPC server
   domain: ""                  # The domain used for the Swagger documentation
-chain_name: "Ethereum"      # The name of the chain for Swagger documentation
-sink_address: "host.docker.internal:8000" # The gRPC host of the sink server
+
+chain:
+  name: "Ethereum"      # The name of the chain for Swagger documentation
+
+sink:
+  address: "host.docker.internal:8000" # The gRPC host of the sink server

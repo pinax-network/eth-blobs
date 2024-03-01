@@ -13,12 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	pbkv "github.com/streamingfast/substreams-sink-kv/pb/substreams/sink/kv/v1"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/keepalive"
 
 	"github.com/eosnationftw/eosn-base-api/helper"
 	"github.com/eosnationftw/eosn-base-api/log"
@@ -38,8 +34,8 @@ type HttpServer struct {
 func (s *HttpServer) Initialize() {
 
 	swagger.SwaggerInfo.Host = s.App.Config.Application.Domain
-	swagger.SwaggerInfo.Title = s.App.Config.ChainName + " Blobs REST API"
-	swagger.SwaggerInfo.Description = "Use this API to get " + s.App.Config.ChainName + " EIP-4844 blobs as a drop-in replacement for Consensus Layer clients API."
+	swagger.SwaggerInfo.Title = s.App.Config.Chain.Name + " Blobs REST API"
+	swagger.SwaggerInfo.Description = "Use this API to get " + s.App.Config.Chain.Name + " EIP-4844 blobs as a drop-in replacement for Consensus Layer clients API."
 
 	s.Router = gin.New()
 
@@ -117,25 +113,4 @@ func NoRoute(c *gin.Context) {
 
 func NoMethod(c *gin.Context) {
 	helper.ReportPublicErrorAndAbort(c, response.MethodNotAllowed, fmt.Sprintf("method not allowed '%s'", c.Request.Method))
-}
-
-func ConnectToSinkServer(sinkServerAddress string) pbkv.KvClient {
-	conn, err := grpc.Dial(
-		sinkServerAddress,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(1024*1024*1024),
-			grpc.WaitForReady(true),
-		),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                5 * time.Minute, // send pings every ... when there is no activity
-			Timeout:             5 * time.Second, // wait that amount of time for ping ack before considering the connection dead
-			PermitWithoutStream: false,
-		}),
-	)
-	if err != nil {
-		log.Fatalf("failed to connect to the sink server: %v", err)
-	}
-
-	return pbkv.NewKvClient(conn)
 }

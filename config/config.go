@@ -4,8 +4,16 @@ import (
 	base_config "github.com/eosnationftw/eosn-base-api/config"
 )
 
+type ChainConfig struct {
+	Name string `yaml:"name" json:"name" mapstructure:"name" validate:"required"`
+}
+
+type SinkConfig struct {
+	Address string `yaml:"address" json:"address" mapstructure:"address" validate:"required"`
+}
+
 type Config struct {
 	Application *base_config.ApplicationConfig `yaml:"application" json:"application" mapstructure:"application" validate:"required"`
-	SinkAddress string                         `yaml:"sink_address" json:"sink_address" mapstructure:"sink_address" validate:"required"`
-	ChainName   string                         `yaml:"chain_name" json:"chain_name" mapstructure:"chain_name"`
+	Sink        *SinkConfig                    `yaml:"sink" json:"sink" mapstructure:"sink" validate:"required"`
+	Chain       *ChainConfig                   `yaml:"chain" json:"chain" mapstructure:"chain" validate:"required"`
 }

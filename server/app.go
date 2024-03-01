@@ -2,6 +2,7 @@ package server
 
 import (
 	"blob-service/config"
+	"blob-service/internal"
 	"flag"
 
 	base_config "github.com/eosnationftw/eosn-base-api/config"
@@ -31,7 +32,7 @@ func Initialize() *App {
 	log.FatalIfError("failed to load config file", err)
 	app.Config = &AppConfig
 
-	app.SinkClient = ConnectToSinkServer(app.Config.SinkAddress)
+	app.SinkClient = internal.ConnectToSinkServer(app.Config.Sink.Address)
 
 	// debug flag overrides application setting
 	if *debugPtr {
