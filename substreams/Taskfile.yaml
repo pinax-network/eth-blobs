@@ -45,8 +45,8 @@ tasks:
         badger3://./blobs.db
         substreams.yaml
         --server-listen-addr=:8000
-        --flush-interval 100
-        --undo-buffer-size 1
+        --flush-interval=100
+        --undo-buffer-size=1
 
   sink:serve:
     desc: "Serve sunk data from KV store"
@@ -61,11 +61,11 @@ tasks:
       - docker run
         -p 8000:8000
         -e SUBSTREAMS_API_TOKEN=$SUBSTREAMS_API_TOKEN
-        -v $(pwd)/blobs.db:/app/blobs.db ghcr.io/streamingfast/substreams-sink-kv:b38cd28
+        -v $(pwd)/blobs.db:/app/blobs.db
+        ghcr.io/streamingfast/substreams-sink-kv:b38cd28
         inject
         $ENDPOINT
         badger3:///app/blobs.db
         https://github.com/pinax-network/blob-service/releases/download/v0.6.1/eth-blobs-v0.6.1.spkg
-        7733899:8733899
         --server-listen-addr=:8000
-        --undo-buffer-size 1
+        --undo-buffer-size=1
