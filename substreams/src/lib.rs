@@ -62,22 +62,25 @@ fn graph_out(slot: Slot) -> Result<EntityChanges, substreams::errors::Error> {
     let timestamp = slot.timestamp.unwrap_or_default().to_string();
     let spec = Spec::from_i32(slot.spec).unwrap().as_str_name();
 
+    tables.create_row("Slot", slot.slot.to_string())
+        .set("number", slot.slot)
+        .set("timestamp", timestamp.as_str())
+        .set("spec", spec)
+        .set("proposer_index", slot.proposer_index)
+        .set("parent_root", slot.parent_root.clone())
+        .set("state_root", slot.state_root.clone())
+        .set("body_root", slot.body_root.clone())
+        .set("signature", slot.signature.clone());
+
     slot.blobs.into_iter().for_each(|blob| {
         tables
             .create_row("Blob", format!("{}:{}", slot.slot, blob.index))
-            .set("slot", slot.slot)
+            .set("slot", slot.slot.to_string())
             .set("index", blob.index)
             .set("blob", blob.blob)
             .set("kzg_commitment", blob.kzg_commitment)
-            .set("kzg_proof", blob.kzg_proof)
             // .set("kzg_commitment_inclusion_proof", blob.kzg_commitment_inclusion_proof.clone())
-            .set("timestamp", timestamp.as_str())
-            .set("spec", spec)
-            .set("proposer_index", slot.proposer_index)
-            .set("parent_root", slot.parent_root.clone())
-            .set("state_root", slot.state_root.clone())
-            .set("body_root", slot.body_root.clone())
-            .set("signature", slot.signature.clone());
+            .set("kzg_proof", blob.kzg_proof);
     });
 
     Ok(tables.to_entity_changes())
