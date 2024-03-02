@@ -5,7 +5,7 @@ type Blob @entity(immutable: true) {
   blob: Bytes!
   kzg_commitment: Bytes!
   kzg_proof: Bytes!
-  kzg_commitment_inclusion_proof: [Proof!]! @derivedFrom (field: "blob")
+  kzg_commitment_inclusion_proof: [String!]!
 }
 
 type Slot @entity(immutable: true) {
@@ -20,10 +20,4 @@ type Slot @entity(immutable: true) {
   timestamp: String!
 
   blobs: [Blob!]! @derivedFrom(field: "slot")
-}
-
-type Proof @entity(immutable: true) {
-  id: ID!
-  proof: Bytes!
-  blob: Blob!
 }

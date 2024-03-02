@@ -79,14 +79,8 @@ fn graph_out(slot: Slot) -> Result<EntityChanges, substreams::errors::Error> {
             .set("index", blob.index as i32)
             .set("blob", blob.blob)
             .set("kzg_commitment", blob.kzg_commitment)
-            .set("kzg_proof", blob.kzg_proof);
-
-        blob.kzg_commitment_inclusion_proof.into_iter().enumerate().for_each(|(i, proof)| {
-            tables
-                .create_row("Proof", format!("{}:{}:{:0>2}", slot.slot, blob.index, i))
-                .set("blob", format!("{}:{:0>2}", slot.slot, blob.index))
-                .set("proof", proof);
-        });
+            .set("kzg_proof", blob.kzg_proof)
+            .set("kzg_commitment_inclusion_proof", blob.kzg_commitment_inclusion_proof.into_iter().map(|p| format!("0x{}", Hex::encode(p))).collect::<Vec<String>>());
     });
 
     Ok(tables.to_entity_changes())
