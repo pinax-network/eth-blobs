@@ -103,7 +103,7 @@ tasks:
       - docker run
         -p 8080:8080
         -v $(pwd)/docker-config.yaml:/app/config.yaml
-        ghcr.io/pinax-network/blob-service:v0.6.1
+        ghcr.io/pinax-network/blob-service:v0.6.2
         -config /app/config.yaml
 
   protogen:
