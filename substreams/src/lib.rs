@@ -62,15 +62,15 @@ fn graph_out(slot: Slot) -> Result<EntityChanges, substreams::errors::Error> {
     let timestamp = slot.timestamp.unwrap_or_default().to_string();
     let spec = Spec::from_i32(slot.spec).unwrap().as_str_name();
 
-    tables.create_row("Slot", slot.slot.to_string())
+    tables.create_row("Slot", format!("{}",slot.slot))
         .set("number", slot.slot)
-        .set("timestamp", timestamp.as_str())
+        .set("timestamp", &timestamp)
         .set("spec", spec)
         .set("proposer_index", slot.proposer_index as i32)
-        .set("parent_root", slot.parent_root.clone())
-        .set("state_root", slot.state_root.clone())
-        .set("body_root", slot.body_root.clone())
-        .set("signature", slot.signature.clone());
+        .set("parent_root", &slot.parent_root)
+        .set("state_root", &slot.state_root)
+        .set("body_root", &slot.body_root)
+        .set("signature", &slot.signature);
 
     slot.blobs.into_iter().for_each(|blob| {
         tables
