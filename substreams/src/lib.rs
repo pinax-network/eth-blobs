@@ -66,7 +66,7 @@ fn graph_out(slot: Slot) -> Result<EntityChanges, substreams::errors::Error> {
         .set("number", slot.slot)
         .set("timestamp", timestamp.as_str())
         .set("spec", spec)
-        .set("proposer_index", slot.proposer_index)
+        .set("proposer_index", slot.proposer_index as i32)
         .set("parent_root", slot.parent_root.clone())
         .set("state_root", slot.state_root.clone())
         .set("body_root", slot.body_root.clone())
@@ -74,13 +74,19 @@ fn graph_out(slot: Slot) -> Result<EntityChanges, substreams::errors::Error> {
 
     slot.blobs.into_iter().for_each(|blob| {
         tables
-            .create_row("Blob", format!("{}:{}", slot.slot, blob.index))
+            .create_row("Blob", format!("{}:{:0>2}", slot.slot, blob.index))
             .set("slot", slot.slot.to_string())
-            .set("index", blob.index)
+            .set("index", blob.index as i32)
             .set("blob", blob.blob)
             .set("kzg_commitment", blob.kzg_commitment)
-            // .set("kzg_commitment_inclusion_proof", blob.kzg_commitment_inclusion_proof.clone())
             .set("kzg_proof", blob.kzg_proof);
+
+        blob.kzg_commitment_inclusion_proof.into_iter().enumerate().for_each(|(i, proof)| {
+            tables
+                .create_row("Proof", format!("{}:{}:{:0>2}", slot.slot, blob.index, i))
+                .set("blob", format!("{}:{:0>2}", slot.slot, blob.index))
+                .set("proof", proof);
+        });
     });
 
     Ok(tables.to_entity_changes())

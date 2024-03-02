@@ -1,10 +1,11 @@
 type Blob @entity(immutable: true) {
   id: ID!
   slot: Slot!
-  index: BigInt!
+  index: Int!
   blob: Bytes!
   kzg_commitment: Bytes!
   kzg_proof: Bytes!
+  kzg_commitment_inclusion_proof: [Proof!]! @derivedFrom (field: "blob")
 }
 
 type Slot @entity(immutable: true) {
@@ -12,11 +13,17 @@ type Slot @entity(immutable: true) {
   number: BigInt!
   signature: Bytes!
   spec: String!
-  proposer_index: BigInt!
+  proposer_index: Int!
   parent_root: Bytes!
   state_root: Bytes!
   body_root: Bytes!
   timestamp: String!
 
   blobs: [Blob!]! @derivedFrom(field: "slot")
+}
+
+type Proof @entity(immutable: true) {
+  id: ID!
+  proof: Bytes!
+  blob: Blob!
 }
