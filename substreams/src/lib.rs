@@ -80,7 +80,7 @@ fn graph_out(slot: Slot) -> Result<EntityChanges, substreams::errors::Error> {
             .set("blob", blob.blob)
             .set("kzg_commitment", blob.kzg_commitment)
             .set("kzg_proof", blob.kzg_proof)
-            .set("kzg_commitment_inclusion_proof", blob.kzg_commitment_inclusion_proof.into_iter().map(|p| format!("0x{}", Hex::encode(p))).collect::<Vec<String>>());
+            .set("kzg_commitment_inclusion_proof", blob.kzg_commitment_inclusion_proof);
     });
 
     Ok(tables.to_entity_changes())
