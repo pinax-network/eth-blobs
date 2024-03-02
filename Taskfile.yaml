@@ -167,7 +167,7 @@ tasks:
         git fetch --all &> /dev/null
         MERGE_RESULT=$(git merge --no-commit --no-ff template/main &>/dev/null || echo "Merge conflicts.")
 
-        if [[ $MERGE_RESULT =~ "Already up to date." ]]; then
+        if [[ "$MERGE_RESULT" =~ "Already up to date." ]]; then
           echo "No template changes to sync";
           exit 0;
         fi
