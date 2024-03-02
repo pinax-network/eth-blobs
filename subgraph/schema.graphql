@@ -5,18 +5,18 @@ type Blob @entity(immutable: true) {
   blob: Bytes!
   kzg_commitment: Bytes!
   kzg_proof: Bytes!
-  kzg_commitment_inclusion_proof: [String!]!
+  kzg_commitment_inclusion_proof: [Bytes!]!
 }
 
 type Slot @entity(immutable: true) {
   id: ID!
   number: BigInt!
-  signature: Bytes!
   spec: String!
   proposer_index: Int!
   parent_root: Bytes!
   state_root: Bytes!
   body_root: Bytes!
+  signature: Bytes!
   timestamp: String!
 
   blobs: [Blob!]! @derivedFrom(field: "slot")
