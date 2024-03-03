@@ -49,7 +49,8 @@ fn kv_out(slot: Slot) -> Result<KvOperations, substreams::errors::Error> {
     let block_root_key = format!("block_root:0x{}", Hex::encode(slot.root.clone()));
     kv_ops.push_new(block_root_key, slot.slot.to_be_bytes(), 1);
 
-    kv_ops.push_new("head", slot.slot.to_be_bytes(), 1);
+    let slot_info = substreams::proto::encode(&slot).expect("unable to encode slot info");
+    kv_ops.push_new("head", slot_info, 1);
 
     Ok(kv_ops)
 }

@@ -21,29 +21,45 @@ func NewBlobsService(sinkClient pbkv.KvClient) *BlobsService {
 	return &BlobsService{sinkClient: sinkClient}
 }
 
-func (bc *BlobsService) GetSlotNumber(ctx context.Context, block_id string) (uint64, error) {
+func (bs *BlobsService) GetSlotNumber(ctx context.Context, block_id string) (uint64, error) {
+
+	slot, err := strconv.ParseUint(block_id, 10, 64)
+	if err == nil {
+		return slot, nil
+	}
+
+	slotInfo, err := bs.GetSlotInfoById(ctx, block_id)
+	if err != nil {
+		return 0, err
+	}
+
+	return slotInfo.Slot, nil
+}
+
+func (bs *BlobsService) GetSlotInfoById(ctx context.Context, block_id string) (*pbbl.SlotInfo, error) {
+
 	if block_id == "head" {
-		resp, err := bc.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "head"})
+		resp, err := bs.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "head"})
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
-		return binary.BigEndian.Uint64(resp.GetValue()), nil
+		slotInfo := &pbbl.SlotInfo{}
+		err = proto.Unmarshal(resp.GetValue(), slotInfo)
+		if err != nil {
+			return nil, err
+		}
+		return slotInfo, nil
 	}
 
 	if len(block_id) > 2 && block_id[:2] == "0x" {
-		resp, err := bc.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "block_root:" + block_id})
+		resp, err := bs.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "block_root:" + block_id})
 		if err != nil {
 			return 0, err
 		}
 		return binary.BigEndian.Uint64(resp.GetValue()), nil
 	}
 
-	slot, err := strconv.ParseUint(block_id, 10, 64)
-	if err != nil {
-		return 0, internal.ErrInvalidSlot
-	}
-
-	return slot, nil
+	return 0, internal.ErrInvalidSlot
 }
 
 func (bs *BlobsService) GetSlotByBlockId(ctx context.Context, blockId string) (*pbbl.Slot, error) {

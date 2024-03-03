@@ -6,7 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	pbbl "blob-service/pb/pinax/ethereum/blobs/v1"
+
 	"github.com/gin-gonic/gin"
+	"github.com/golang/protobuf/proto"
 )
 
 type HealthController struct {
@@ -18,9 +21,10 @@ func NewHealthController(blobsService *services.BlobsService) *HealthController 
 }
 
 type HealthResponse struct {
-	Status string `json:"status"`
-	Detail string `json:"detail,omitempty"`
-	Head   uint64 `json:"head,omitempty"`
+	Status        string `json:"status"`
+	Detail        string `json:"detail,omitempty"`
+	Head          uint64 `json:"head,omitempty"`
+	HeadTimestamp string `json:"head_timestamp,omitempty"`
 }
 
 // Health
@@ -36,12 +40,20 @@ func (hc *HealthController) Health(c *gin.Context) {
 	defer cancel()
 
 	response := &HealthResponse{Status: "ok"}
-	slotNum, err := hc.blobsService.GetSlotNumber(ctx, "head")
+	headResp, err := hc.blobsService.GetSlotNumber(ctx, "head")
 	if err != nil {
 		response.Status = "error"
 		response.Detail = err.Error()
 	} else {
-		response.Head = slotNum
+		slotInfo := &pbbl.SlotInfo{}
+		err = proto.Unmarshal(headResp.GetValue(), slotInfo)
+		if err != nil {
+			response.Status = "error"
+			response.Detail = err.Error()
+		} else {
+			response.Head = slotInfo.Slot
+			response.HeadTimestamp = slotInfo.Timestamp
+		}
 	}
 
 	c.JSON(http.StatusOK, response)

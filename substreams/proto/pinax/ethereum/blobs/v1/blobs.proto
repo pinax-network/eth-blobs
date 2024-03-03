@@ -36,3 +36,8 @@ message Blob {
   bytes kzg_proof = 4;
   repeated bytes kzg_commitment_inclusion_proof = 6;
 }
+
+message SlotInfo {
+  uint64 slot = 1;
+  google.protobuf.Timestamp timestamp = 2;
+}
