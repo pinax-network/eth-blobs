@@ -1,0 +1,18 @@
+GET http://localhost:8080/eth/v1/beacon/blob_sidecars/7677000
+
+###
+
+GET http://localhost:8080/eth/v1/beacon/blob_sidecars/head
+
+###
+
+GET http://localhost:8080/health
+
+
+###
+
+GET http://goerli-arch41.mar.eosn.io:5052/eth/v1/beacon/blob_sidecars/7677000
+
+###
+
+GET http://goerli-arch41.mar.eosn.io:5052/eth/v1/beacon/blob_sidecars/head

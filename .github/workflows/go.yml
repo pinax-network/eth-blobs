@@ -46,4 +46,5 @@ jobs:
           GOPRIVATE: github.com/pinax-network,github.com/eosnationftw,github.com/pomelo-io
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
+          cd api-service
           task build

@@ -102,7 +102,7 @@ tasks:
     cmds:
       - docker run
         -p 8080:8080
-        -v $(pwd)/docker-config.yaml:/app/config.yaml
+        -v $(pwd)/config.docker.yaml:/app/config.yaml
         ghcr.io/pinax-network/blob-service:v0.6.2
         -config /app/config.yaml
 
@@ -110,7 +110,7 @@ tasks:
     desc: "Builds types from protobuf files"
     cmds:
       - mkdir -p pb
-      - protoc --go_out=./pb --go_opt=paths=source_relative --proto_path=substreams/proto pinax/ethereum/blobs/v1/blobs.proto
+      - protoc --go_out=./pb --go_opt=paths=source_relative --proto_path=../proto pinax/ethereum/blobs/v1/blobs.proto
       - ls pb/pinax/ethereum/blobs/v1/*.pb.go | xargs -n1 -IX bash -c 'sed s/,omitempty// X > X.tmp && mv X{.tmp,}'
 
   test:format:

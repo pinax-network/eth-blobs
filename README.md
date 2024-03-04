@@ -1,36 +1,6 @@
-# Ethereum Consensus Layer Blob Service
-
-### From Source
-
-- Build substreams and start KV sink
-```bash
-$ cd substreams
-$ task protogen # if needed
-$ task sink
-```
-
-- Start Blobs service
-```bash
-$ task protogen
-$ task generate:go
-$ task start:service
-```
-
-### Or, with Docker:
-
-- Start KV sink
-```bash
-$ cd substreams
-$ task start:docker`
-```
-
-- Start Blob service
-```bash
-$ task start:docker`
-```
-
-
-### Query
-```bash
-$ curl -v http://localhost:8080/eth/v1/beacon/blob_sidecars/7677000
-```
+# Ethereum Blobs Monorepo
+This repository contains several components:
+- `proto` - Blobs protobuf definitions
+- `substreams` - Substreams modules to stream blobs data from substreams-enabled Consensus Layer Firehose
+- `subgraph` - Substreams-based Subgraph that uses substreams module
+- `api-service` - REST API service to access to blobs via substreams sink that can be used as a drop-in replacement for Consensus Layer clients' blob_sidecar API
