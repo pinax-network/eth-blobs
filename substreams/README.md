@@ -3,7 +3,7 @@ This substreams package offers two sink map modules:
 - `kv_out` - to sink into KV store
 - `graph_out` - to sink into [substreams-based Subgraph](../subgraph)
 
-### [Latest Releases](https://github.com/pinax-network/blob-service/releases)
+### [Latest Releases](https://github.com/pinax-network/eth-blobs/releases)
 
 ### Quick Start
 

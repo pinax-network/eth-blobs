@@ -73,6 +73,6 @@ tasks:
         inject
         $ENDPOINT
         badger3:///app/blobs.db
-        https://github.com/pinax-network/blob-service/releases/download/v0.6.2/eth-blobs-v0.6.2.spkg
+        https://github.com/pinax-network/eth-blobs/releases/download/v0.6.2/eth-blobs-v0.6.2.spkg
         --server-listen-addr=:8000
         --undo-buffer-size=1
