@@ -9,11 +9,11 @@ pool_size = 10
 
 [chains]
 ingestor = "block_ingestor_node"
-[chains.mainnet]
+[chains.holesky-cl]
 protocol = "substreams"
 shard = "primary"
 provider = [
-    { label = "substreams-goerli", details = { type = "substreams", url = "$SUBSTREAMS_ENDPOINT", token = "$SUBSTREAMS_API_TOKEN" }},
+    { label = "substreams-holesky", details = { type = "substreams", url = "https://holesky-cl.substreams.pinax.network:443", token = "$SUBSTREAMS_API_TOKEN" }},
 ]
 
 [deployment]
