@@ -1,7 +1,7 @@
 package config
 
 import (
-	base_config "github.com/eosnationftw/eosn-base-api/config"
+	base_config "github.com/pinax-network/golang-base/config"
 )
 
 type ChainConfig struct {

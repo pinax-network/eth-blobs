@@ -16,14 +16,14 @@ import (
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	"github.com/eosnationftw/eosn-base-api/helper"
-	"github.com/eosnationftw/eosn-base-api/log"
-	"github.com/eosnationftw/eosn-base-api/metrics"
-	"github.com/eosnationftw/eosn-base-api/middleware"
-	"github.com/eosnationftw/eosn-base-api/response"
 	"github.com/friendsofgo/errors"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
+	"github.com/pinax-network/golang-base/helper"
+	"github.com/pinax-network/golang-base/log"
+	"github.com/pinax-network/golang-base/metrics"
+	"github.com/pinax-network/golang-base/middleware"
+	"github.com/pinax-network/golang-base/response"
 )
 
 type HttpServer struct {

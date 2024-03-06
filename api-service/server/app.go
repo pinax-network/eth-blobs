@@ -5,9 +5,9 @@ import (
 	"blob-service/internal"
 	"flag"
 
-	base_config "github.com/eosnationftw/eosn-base-api/config"
-	"github.com/eosnationftw/eosn-base-api/log"
 	"github.com/gin-gonic/gin"
+	base_config "github.com/pinax-network/golang-base/config"
+	"github.com/pinax-network/golang-base/log"
 	pbkv "github.com/streamingfast/substreams-sink-kv/pb/substreams/sink/kv/v1"
 )
 

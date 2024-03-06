@@ -3,11 +3,11 @@ package internal
 import (
 	"net/http"
 
-	"github.com/eosnationftw/eosn-base-api/helper"
-	"github.com/eosnationftw/eosn-base-api/log"
-	"github.com/eosnationftw/eosn-base-api/response"
 	"github.com/friendsofgo/errors"
 	"github.com/gin-gonic/gin"
+	"github.com/pinax-network/golang-base/helper"
+	"github.com/pinax-network/golang-base/log"
+	"github.com/pinax-network/golang-base/response"
 	"go.uber.org/zap"
 )
 

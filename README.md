@@ -8,7 +8,7 @@ This repository contains several components:
 ## Substreams
 For source of block data, you need to have access to consensus layer substreams-enabled firehose endpoint for your chain, powered by [Beacon Firehose](https://github.com/pinax-network/firehose-beacon).
 
-You can either run your own stack (hard) or use endpoints provided by [Pinax](https://pinax.network/) (easy).
+You can either run your own stack or use endpoints provided by [Pinax](https://pinax.network/).
 
 Currently, the following chains are supported:
 - Ethereum: `eth-cl.substreams.pinax.network:443`

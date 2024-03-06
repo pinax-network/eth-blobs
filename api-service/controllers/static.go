@@ -3,8 +3,8 @@ package controllers
 import (
 	"blob-service/flags"
 
-	"github.com/eosnationftw/eosn-base-api/response"
 	"github.com/gin-gonic/gin"
+	"github.com/pinax-network/golang-base/response"
 )
 
 type VersionResponse struct {

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eosnationftw/eosn-base-api/response"
 	"github.com/gin-gonic/gin"
+	"github.com/pinax-network/golang-base/response"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
