@@ -156,12 +156,11 @@ dependencies = [
 
 [[package]]
 name = "eth_blobs"
-version = "0.1.0"
+version = "0.6.2"
 dependencies = [
  "prost 0.11.9",
  "prost-types 0.11.9",
  "substreams",
- "substreams-database-change",
  "substreams-entity-change",
  "substreams-ethereum",
  "substreams-sink-kv",
@@ -796,19 +795,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "substreams-database-change"
-version = "1.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed32ca6fc7fa4b7a684d3abd5bb0545aadd2df82402e7336443cdbb6f8b350c3"
-dependencies = [
- "prost 0.11.9",
- "prost-types 0.11.9",
- "substreams",
-]
-
-[[package]]
 name = "substreams-entity-change"
-version = "1.3.1"
+version = "1.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2c7fca123abff659d15ed30da5b605fa954a29e912c94260c488d0d18f9107d"
 dependencies = [
  "base64",
  "prost 0.11.9",

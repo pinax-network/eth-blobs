@@ -50,7 +50,7 @@ modules:
     inputs:
       - map: map_blobs
     output:
-      type: proto:sf.substreams.entity.v1.EntityChanges
+      type: proto:sf.substreams.sink.entity.v1.EntityChanges
 
 sink:
   module: kv_out
