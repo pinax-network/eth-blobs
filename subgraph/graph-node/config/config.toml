@@ -9,7 +9,7 @@ pool_size = 10
 
 [chains]
 ingestor = "block_ingestor_node"
-[chains.holesky-cl]
+[chains.holesky-beacon]
 protocol = "substreams"
 shard = "primary"
 provider = [

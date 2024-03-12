@@ -6,7 +6,7 @@ schema:
 dataSources:
   - kind: substreams
     name: Blobs
-    network: holesky-cl
+    network: holesky-beacon
     source:
       package:
         moduleName: graph_out
