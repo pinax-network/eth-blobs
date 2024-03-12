@@ -47,7 +47,7 @@ graph TD;
 
 ```yaml
 Package name: eth_blobs
-Version: v0.6.2
+Version: v0.6.3
 Doc: This substreams package lets you stream Consensus Layer EIP-4844 blobs with attached meta data.
 
     Among the supported chains are:
@@ -66,23 +66,23 @@ Initial block: 0
 Kind: map
 Input: source: sf.beacon.type.v1.Block
 Output Type: proto:pinax.ethereum.blobs.v1.Slot
-Hash: a110dc3d832afd7e85a0ff4a2d935b72b215d893
+Hash: 4560de7515ad6fed377edc779d6eb7b889f7ac10
 
 Name: kv_out
 Initial block: 0
 Kind: map
 Input: map: map_blobs
 Output Type: proto:sf.substreams.sink.kv.v1.KVOperations
-Hash: 800435f53200217af6c523f95b90e10db3ac9517
+Hash: f727d9e55f0a4baf84933043101c916b7aecde88
 
 Name: graph_out
 Initial block: 0
 Kind: map
 Input: map: map_blobs
-Output Type: proto:sf.substreams.entity.v1.EntityChanges
-Hash: 46ef992415d463ec45bcbf6fe34b716b451b05ae
+Output Type: proto:sf.substreams.sink.entity.v1.EntityChanges
+Hash: a0154e491387e44e7fde5eafba168a80fe9db02c
 
-Network: goerli-cl
+Network: beacon
 
 Sink config:
 ----

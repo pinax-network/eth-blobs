@@ -1,7 +1,7 @@
 specVersion: v0.1.0
 package:
   name: "eth_blobs"
-  version: v0.6.2
+  version: v0.6.3
   image: ./logo.png
   doc: |
     This substreams package lets you stream Consensus Layer EIP-4844 blobs with attached meta data.

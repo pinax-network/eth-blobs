@@ -103,7 +103,7 @@ tasks:
       - docker run
         -p 8080:8080
         -v $(pwd)/config.docker.yaml:/app/config.yaml
-        ghcr.io/pinax-network/eth-blobs:v0.6.2
+        ghcr.io/pinax-network/eth-blobs:v0.6.3
         -config /app/config.yaml
 
   protogen:
