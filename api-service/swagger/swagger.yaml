@@ -96,8 +96,9 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: This is the API for Ethereum Blobs.
-  title: Ethereum Consensus Layer Blobs REST API
+  description: Use this API to get EIP-4844 blobs as a drop-in replacement for Consensus
+    Layer clients API.
+  title: Ethereum Blobs REST API
   version: "1.0"
 paths:
   /eth/v1/beacon/blob_sidecars/{block_id}:

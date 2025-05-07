@@ -5,8 +5,8 @@
     ],
     "swagger": "2.0",
     "info": {
-        "description": "This is the API for Ethereum Blobs.",
-        "title": "Ethereum Consensus Layer Blobs REST API",
+        "description": "Use this API to get EIP-4844 blobs as a drop-in replacement for Consensus Layer clients API.",
+        "title": "Ethereum Blobs REST API",
         "contact": {},
         "version": "1.0"
     },
