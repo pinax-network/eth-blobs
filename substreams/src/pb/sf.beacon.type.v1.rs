@@ -24,7 +24,7 @@ pub struct Block {
     pub signature: ::prost::alloc::vec::Vec<u8>,
     #[prost(message, optional, tag="31")]
     pub timestamp: ::core::option::Option<::prost_types::Timestamp>,
-    #[prost(oneof="block::Body", tags="20, 21, 22, 23, 24")]
+    #[prost(oneof="block::Body", tags="20, 21, 22, 23, 24, 25")]
     pub body: ::core::option::Option<block::Body>,
 }
 /// Nested message and enum types in `Block`.
@@ -42,6 +42,8 @@ pub mod block {
         Capella(super::CapellaBody),
         #[prost(message, tag="24")]
         Deneb(super::DenebBody),
+        #[prost(message, tag="25")]
+        Electra(super::ElectraBody),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -166,6 +168,38 @@ pub struct DenebBody {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ElectraBody {
+    #[prost(bytes="vec", tag="1")]
+    pub rando_reveal: ::prost::alloc::vec::Vec<u8>,
+    #[prost(message, optional, tag="2")]
+    pub eth1_data: ::core::option::Option<Eth1Data>,
+    #[prost(bytes="vec", tag="3")]
+    pub graffiti: ::prost::alloc::vec::Vec<u8>,
+    #[prost(message, repeated, tag="4")]
+    pub proposer_slashings: ::prost::alloc::vec::Vec<ProposerSlashing>,
+    #[prost(message, repeated, tag="5")]
+    pub attester_slashings: ::prost::alloc::vec::Vec<AttesterSlashing>,
+    #[prost(message, repeated, tag="6")]
+    pub attestations: ::prost::alloc::vec::Vec<ElectraAttestation>,
+    #[prost(message, repeated, tag="7")]
+    pub deposits: ::prost::alloc::vec::Vec<Deposit>,
+    #[prost(message, repeated, tag="8")]
+    pub voluntary_exits: ::prost::alloc::vec::Vec<SignedVoluntaryExit>,
+    #[prost(message, optional, tag="9")]
+    pub sync_aggregate: ::core::option::Option<SyncAggregate>,
+    #[prost(message, optional, tag="10")]
+    pub execution_payload: ::core::option::Option<DenebExecutionPayload>,
+    #[prost(message, repeated, tag="11")]
+    pub bls_to_execution_changes: ::prost::alloc::vec::Vec<SignedBlsToExecutionChange>,
+    #[prost(bytes="vec", repeated, tag="12")]
+    pub blob_kzg_commitments: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
+    #[prost(message, optional, tag="13")]
+    pub execution_requests: ::core::option::Option<ExecutionRequest>,
+    #[prost(message, repeated, tag="20")]
+    pub embedded_blobs: ::prost::alloc::vec::Vec<Blob>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Eth1Data {
     #[prost(bytes="vec", tag="1")]
     pub deposit_root: ::prost::alloc::vec::Vec<u8>,
@@ -199,6 +233,18 @@ pub struct Attestation {
     pub data: ::core::option::Option<AttestationData>,
     #[prost(bytes="vec", tag="3")]
     pub signature: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ElectraAttestation {
+    #[prost(bytes="vec", tag="1")]
+    pub aggregation_bits: ::prost::alloc::vec::Vec<u8>,
+    #[prost(message, optional, tag="2")]
+    pub data: ::core::option::Option<AttestationData>,
+    #[prost(bytes="vec", tag="3")]
+    pub signature: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="4")]
+    pub committee_bits: ::prost::alloc::vec::Vec<u8>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -446,6 +492,50 @@ pub struct Blob {
     #[prost(bytes="vec", repeated, tag="5")]
     pub kzg_commitment_inclusion_proof: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExecutionRequest {
+    #[prost(message, repeated, tag="1")]
+    pub deposits: ::prost::alloc::vec::Vec<DepositRequest>,
+    #[prost(message, repeated, tag="2")]
+    pub withdrawals: ::prost::alloc::vec::Vec<WithdrawalRequest>,
+    #[prost(message, repeated, tag="3")]
+    pub consolidations: ::prost::alloc::vec::Vec<ConsolidationRequest>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DepositRequest {
+    #[prost(bytes="vec", tag="1")]
+    pub pub_key: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="2")]
+    pub withdrawal_credentials: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag="3")]
+    pub amount: u64,
+    #[prost(bytes="vec", tag="4")]
+    pub signature: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag="5")]
+    pub index: u64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct WithdrawalRequest {
+    #[prost(bytes="vec", tag="1")]
+    pub source_address: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="2")]
+    pub validator_pub_key: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag="3")]
+    pub amount: u64,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ConsolidationRequest {
+    #[prost(bytes="vec", tag="1")]
+    pub source_address: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="2")]
+    pub source_pub_key: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="3")]
+    pub target_pub_key: ::prost::alloc::vec::Vec<u8>,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum Spec {
@@ -455,6 +545,7 @@ pub enum Spec {
     Bellatrix = 3,
     Capella = 4,
     Deneb = 5,
+    Electra = 6,
 }
 impl Spec {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -469,6 +560,7 @@ impl Spec {
             Spec::Bellatrix => "BELLATRIX",
             Spec::Capella => "CAPELLA",
             Spec::Deneb => "DENEB",
+            Spec::Electra => "ELECTRA",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -480,6 +572,7 @@ impl Spec {
             "BELLATRIX" => Some(Self::Bellatrix),
             "CAPELLA" => Some(Self::Capella),
             "DENEB" => Some(Self::Deneb),
+            "ELECTRA" => Some(Self::Electra),
             _ => None,
         }
     }

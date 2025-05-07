@@ -6,11 +6,11 @@ schema:
 dataSources:
   - kind: substreams
     name: Blobs
-    network: holesky-beacon
+    network: eth-cl
     source:
       package:
         moduleName: graph_out
-        file: ../substreams/eth-blobs-v0.6.3.spkg
+        file: https://github.com/pinax-network/eth-blobs/releases/download/v0.7.0/eth-blobs-v0.7.0.spkg
     mapping:
       apiVersion: 0.0.5
       kind: substreams/graph-entities

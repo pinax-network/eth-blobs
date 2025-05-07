@@ -1,7 +1,7 @@
 specVersion: v0.1.0
 package:
   name: "eth_blobs"
-  version: v0.6.3
+  version: v0.7.0
   image: ./logo.png
   doc: |
     This substreams package lets you stream Consensus Layer EIP-4844 blobs with attached meta data.
@@ -15,7 +15,7 @@ package:
     - chiado-cl: chiado-cl.substreams.pinax.network:443
 
 imports:
-  beacon: https://github.com/pinax-network/firehose-beacon/releases/download/v0.1.1/beacon-v0.1.1.spkg
+  beacon: https://github.com/pinax-network/firehose-beacon/releases/download/beacon-spkg-v0.6.0/beacon-v0.6.0.spkg
   kv: https://github.com/streamingfast/substreams-sink-kv/releases/download/v2.1.6/substreams-sink-kv-v2.1.6.spkg
   entity: https://github.com/streamingfast/substreams-entity-change/releases/download/v1.1.0/substreams-entity-change-v1.1.0.spkg
 

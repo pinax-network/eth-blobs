@@ -47,16 +47,11 @@ graph TD;
 
 ```yaml
 Package name: eth_blobs
-Version: v0.6.3
-Doc: This substreams package lets you stream Consensus Layer EIP-4844 blobs with attached meta data.
-
-    Among the supported chains are:
-    - mainnet-cl: eth-cl.substreams.pinax.network:443
-    - goerli-cl: goerli-cl.substreams.pinax.network:443
-    - sepolia-cl: sepolia-cl.substreams.pinax.network:443
-    - holesky-cl: holesky-cl.substreams.pinax.network:443
-    - gnosis-cl: gnosis-cl.substreams.pinax.network:443
-    - chiado-cl: chiado-cl.substreams.pinax.network:443
+Version: v0.7.0
+Doc: # Ethereum Blobs Substream
+    This substreams package offers two sink map modules:
+    - `kv_out` - to sink into KV store
+    - `graph_out` - to sink into [substreams-based Subgraph](../subgraph)
 
 Image: [embedded image: 49353 bytes]
 Modules:
@@ -66,21 +61,21 @@ Initial block: 0
 Kind: map
 Input: source: sf.beacon.type.v1.Block
 Output Type: proto:pinax.ethereum.blobs.v1.Slot
-Hash: 4560de7515ad6fed377edc779d6eb7b889f7ac10
+Hash: 07c7426a39fad90620c4d012747cc32e4cc2d454
 
 Name: kv_out
 Initial block: 0
 Kind: map
 Input: map: map_blobs
 Output Type: proto:sf.substreams.sink.kv.v1.KVOperations
-Hash: f727d9e55f0a4baf84933043101c916b7aecde88
+Hash: bbbcac477a860f61dd641007346818115f86d0da
 
 Name: graph_out
 Initial block: 0
 Kind: map
 Input: map: map_blobs
 Output Type: proto:sf.substreams.sink.entity.v1.EntityChanges
-Hash: a0154e491387e44e7fde5eafba168a80fe9db02c
+Hash: 20a07f96065e9eaf1d23ab604d09285eb5c335cc
 
 Network: beacon
 
@@ -89,4 +84,5 @@ Sink config:
 type: sf.substreams.sink.kv.v1.GenericService
 configs:
 - sink_config: <nil>
+
 ```

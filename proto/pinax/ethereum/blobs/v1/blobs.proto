@@ -13,6 +13,7 @@ enum Spec {
   BELLATRIX = 3;
   CAPELLA = 4;
   DENEB = 5;
+  ELECTRA = 6;
 }
 
 message Slot {
