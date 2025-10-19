@@ -20,4 +20,15 @@ pub mod sf {
             }
         }
     }
+    pub mod substreams {
+        pub mod sink {
+            pub mod kv {
+                // @@protoc_insertion_point(attribute:sf.substreams.sink.kv.v1)
+                pub mod v1 {
+                    include!("sf.substreams.sink.kv.v1.rs");
+                    // @@protoc_insertion_point(sf.substreams.sink.kv.v1)
+                }
+            }
+        }
+    }
 }
