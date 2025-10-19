@@ -24,7 +24,7 @@ pub struct Block {
     pub signature: ::prost::alloc::vec::Vec<u8>,
     #[prost(message, optional, tag="31")]
     pub timestamp: ::core::option::Option<::prost_types::Timestamp>,
-    #[prost(oneof="block::Body", tags="20, 21, 22, 23, 24, 25")]
+    #[prost(oneof="block::Body", tags="20, 21, 22, 23, 24, 25, 26")]
     pub body: ::core::option::Option<block::Body>,
 }
 /// Nested message and enum types in `Block`.
@@ -44,6 +44,8 @@ pub mod block {
         Deneb(super::DenebBody),
         #[prost(message, tag="25")]
         Electra(super::ElectraBody),
+        #[prost(message, tag="26")]
+        Fusaka(super::ElectraBody),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -546,6 +548,7 @@ pub enum Spec {
     Capella = 4,
     Deneb = 5,
     Electra = 6,
+    Fusaka = 7,
 }
 impl Spec {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -561,6 +564,7 @@ impl Spec {
             Spec::Capella => "CAPELLA",
             Spec::Deneb => "DENEB",
             Spec::Electra => "ELECTRA",
+            Spec::Fusaka => "FUSAKA",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -573,6 +577,7 @@ impl Spec {
             "CAPELLA" => Some(Self::Capella),
             "DENEB" => Some(Self::Deneb),
             "ELECTRA" => Some(Self::Electra),
+            "FUSAKA" => Some(Self::Fusaka),
             _ => None,
         }
     }
