@@ -31,6 +31,17 @@ fn map_blobs(blk: BeaconBlock) -> Result<Slot, substreams::errors::Error> {
                 kzg_commitment_inclusion_proof: b.kzg_commitment_inclusion_proof,
             })
             .collect(),
+        Fusaka(body) => body
+            .embedded_blobs
+            .into_iter()
+            .map(|b| Blob {
+                index: b.index as u32,
+                blob: b.blob,
+                kzg_commitment: b.kzg_commitment,
+                kzg_proof: b.kzg_proof,
+                kzg_commitment_inclusion_proof: b.kzg_commitment_inclusion_proof,
+            })
+            .collect(),
         _ => vec![],
     };
 
