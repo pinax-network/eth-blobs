@@ -2,9 +2,11 @@ mod pb;
 
 use pb::pinax::ethereum::blobs::v1::{Blob, Slot, Spec};
 use pb::sf::beacon::r#type::v1::{block::Body::*, Block as BeaconBlock};
+use pb::sf::substreams::sink::kv::v1::KvOperations;
 use substreams::Hex;
 use substreams_entity_change::{pb::entity::EntityChanges, tables::Tables};
-use substreams_sink_kv::pb::sf::substreams::sink::kv::v1::KvOperations;
+
+use crate::pb::sf::substreams::sink::kv::v1::{kv_operation::Type, KvOperation};
 
 #[substreams::handlers::map]
 fn map_blobs(blk: BeaconBlock) -> Result<Slot, substreams::errors::Error> {
@@ -60,6 +62,17 @@ fn map_blobs(blk: BeaconBlock) -> Result<Slot, substreams::errors::Error> {
     })
 }
 
+impl KvOperations {
+    pub fn push_new<K: AsRef<str>, V: AsRef<[u8]>>(&mut self, key: K, value: V, ordinal: u64) {
+        self.operations.push(KvOperation {
+            key: key.as_ref().to_string(),
+            value: value.as_ref().to_vec(),
+            ordinal: ordinal,
+            r#type: Type::Set.into(),
+        })
+    }
+}
+
 #[substreams::handlers::map]
 fn kv_out(slot: Slot) -> Result<KvOperations, substreams::errors::Error> {
     let mut kv_ops: KvOperations = Default::default();
@@ -81,7 +94,7 @@ fn graph_out(slot: Slot) -> Result<EntityChanges, substreams::errors::Error> {
     let mut tables = Tables::new();
 
     let timestamp = slot.timestamp.unwrap_or_default().to_string();
-    let spec = Spec::from_i32(slot.spec).unwrap().as_str_name();
+    let spec = Spec::try_from(slot.spec).unwrap().as_str_name();
 
     tables
         .create_row("Slot", format!("{}", slot.slot))

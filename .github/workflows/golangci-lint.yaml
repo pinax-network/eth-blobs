@@ -2,9 +2,9 @@
 name: Linting
 on:
   push:
-    branches: [ develop* ]
+    branches: [develop*]
   pull_request:
-    branches: [ develop*,main ]
+    branches: [develop*, main]
 
 permissions:
   contents: read
@@ -14,8 +14,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
-        os: [ ubuntu-latest ]
+        go-version: [1.21.x]
+        os: [ubuntu-latest]
     name: lint
     steps:
       - name: Checkout repo
@@ -32,13 +32,15 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Format
-        run: task test:format
+        run: cd api-service && task test:format
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
           # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
           version: v1.56
+          # Optional: working directory, useful when you have multiple Go modules
+          working-directory: api-service
           # Optional: golangci-lint command line arguments.
           args: --timeout=5m
           # Optional: show only new issues if it's a pull request. The default value is `false`.

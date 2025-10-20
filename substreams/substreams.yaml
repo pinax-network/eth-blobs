@@ -1,9 +1,10 @@
 specVersion: v0.1.0
 package:
   name: "eth_blobs"
-  version: v0.7.1
+  version: v0.8.0
   image: ./logo.png
-  doc: |
+  url: https://github.com/pinax-network/eth-blobs
+  description: |
     This substreams package lets you stream Consensus Layer EIP-4844 blobs with attached meta data.
 
     Among the supported chains are:
@@ -16,12 +17,13 @@ package:
 
 imports:
   beacon: https://github.com/pinax-network/firehose-beacon/releases/download/v0.7.1/beacon-v0.7.0.spkg
-  kv: https://github.com/streamingfast/substreams-sink-kv/releases/download/v2.1.6/substreams-sink-kv-v2.1.6.spkg
-  entity: https://github.com/streamingfast/substreams-sink-entity-changes/releases/download/v1.3.2/substreams-sink-entity-changes-v1.3.2.spkg
+  entity: https://github.com/streamingfast/substreams-sink-entity-changes/releases/download/v2.0.0/substreams-entity-change-v2.0.0.spkg
 
 protobuf:
   files:
     - pinax/ethereum/blobs/v1/blobs.proto
+    - substreams/sink/kv/v1/kv.proto
+    - substreams/sink/kv/v1/services.proto
   importPaths:
     - ../proto
 
