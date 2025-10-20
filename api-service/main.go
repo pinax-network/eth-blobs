@@ -15,7 +15,7 @@ import (
 //	@description	Use this API to get EIP-4844 blobs as a drop-in replacement for Consensus Layer clients API.
 
 //	@host		localhost:8080
-//	@schemes	http https
+//	@schemes	https http
 // //	@BasePath	/eth/v1
 
 func main() {

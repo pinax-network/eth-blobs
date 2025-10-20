@@ -302,7 +302,7 @@ var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
 	BasePath:         "",
-	Schemes:          []string{"http", "https"},
+	Schemes:          []string{"https", "http"},
 	Title:            "Ethereum Blobs REST API",
 	Description:      "Use this API to get EIP-4844 blobs as a drop-in replacement for Consensus Layer clients API.",
 	InfoInstanceName: "swagger",
