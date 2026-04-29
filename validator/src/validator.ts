@@ -2,8 +2,10 @@ import { ethers } from "ethers";
 import { createHash } from "crypto";
 
 /**
- * Validator that checks blobs in the service against execution layer
+ * Validator that checks blobs in the service against execution layer or consensus layer
  */
+
+type ValidationMode = "el" | "cl";
 
 interface BlobServiceBlob {
 	index: string;
@@ -17,7 +19,9 @@ interface BlobServiceBlob {
 }
 
 interface ValidationConfig {
-	executionRpcUrl: string;
+	mode: ValidationMode;
+	executionRpcUrl?: string;
+	consensusRpcUrl?: string;
 	blobServiceUrl: string;
 	startBlock: number;
 	endBlock?: number;
@@ -29,6 +33,9 @@ interface ChainConfig {
 	name: string;
 	chainId: number;
 	defaultStartBlock: number;
+	executionRpcUrl: string;
+	consensusRpcUrl: string;
+	blobServiceUrl: string;
 }
 
 const CHAIN_CONFIGS: Record<string, ChainConfig> = {
@@ -37,7 +44,10 @@ const CHAIN_CONFIGS: Record<string, ChainConfig> = {
 		genesisTime: 1606824023,
 		secondsPerSlot: 12,
 		name: "Ethereum Mainnet",
-		defaultStartBlock: 19426587, // First block after Dencun
+		defaultStartBlock: 19426587,
+		executionRpcUrl: "http://eth.rpcx.riv-prod1.pinax.io",
+		consensusRpcUrl: "http://eth-arch909.riv.eosn.io:5052",
+		blobServiceUrl: "https://eth.blobs.pinax.network",
 	},
 	goerli: {
 		chainId: 5,
@@ -45,6 +55,9 @@ const CHAIN_CONFIGS: Record<string, ChainConfig> = {
 		secondsPerSlot: 12,
 		name: "Goerli",
 		defaultStartBlock: 10000000,
+		executionRpcUrl: "http://goerli.rpcx.riv-prod1.pinax.io",
+		consensusRpcUrl: "http://goerli-arch909.riv.eosn.io:5052",
+		blobServiceUrl: "https://goerli.blobs.pinax.network",
 	},
 	sepolia: {
 		chainId: 11155111,
@@ -52,6 +65,9 @@ const CHAIN_CONFIGS: Record<string, ChainConfig> = {
 		secondsPerSlot: 12,
 		name: "Sepolia",
 		defaultStartBlock: 5000000,
+		executionRpcUrl: "http://sepolia.rpcx.riv-prod1.pinax.io",
+		consensusRpcUrl: "http://sepolia-arch43.kan.eosn.io:5052",
+		blobServiceUrl: "https://sepolia.blobs.pinax.network",
 	},
 	holesky: {
 		chainId: 17000,
@@ -59,13 +75,19 @@ const CHAIN_CONFIGS: Record<string, ChainConfig> = {
 		secondsPerSlot: 12,
 		name: "Holesky",
 		defaultStartBlock: 1000000,
+		executionRpcUrl: "http://holesky.rpcx.riv-prod1.pinax.io",
+		consensusRpcUrl: "http://holesky-arch909.riv.eosn.io:5052",
+		blobServiceUrl: "https://holesky.blobs.pinax.network",
 	},
 	gnosis: {
 		chainId: 100,
 		genesisTime: 1638993340,
 		secondsPerSlot: 5,
 		name: "Gnosis",
-		defaultStartBlock: 30000000,
+		defaultStartBlock: 33000000, // After Dencun (March 11, 2024)
+		executionRpcUrl: "http://gnosis.rpcx.riv-prod1.pinax.io",
+		consensusRpcUrl: "http://gnosis-arch908.riv.eosn.io:5052",
+		blobServiceUrl: "https://gnosis.blobs.pinax.network",
 	},
 	chiado: {
 		chainId: 10200,
@@ -73,6 +95,9 @@ const CHAIN_CONFIGS: Record<string, ChainConfig> = {
 		secondsPerSlot: 5,
 		name: "Chiado",
 		defaultStartBlock: 5000000,
+		executionRpcUrl: "http://chiado.rpcx.riv-prod1.pinax.io",
+		consensusRpcUrl: "http://chiado-arch909.riv.eosn.io:5052",
+		blobServiceUrl: "https://chiado.blobs.pinax.network",
 	},
 	hoodi: {
 		chainId: 17001,
@@ -80,17 +105,22 @@ const CHAIN_CONFIGS: Record<string, ChainConfig> = {
 		secondsPerSlot: 12,
 		name: "Hoodi",
 		defaultStartBlock: 1000000,
+		executionRpcUrl: "http://hoodi-arch815.riv.eosn.io:8545",
+		consensusRpcUrl: "http://hoodi-arch909.riv.eosn.io:5052",
+		blobServiceUrl: "https://hoodi.blobs.pinax.network",
 	},
 };
 
 class SmartBlobValidator {
-	private provider: ethers.JsonRpcProvider;
+	private provider?: ethers.JsonRpcProvider;
 	private config: ValidationConfig;
 	private chainConfig!: ChainConfig;
 
 	constructor(config: ValidationConfig) {
 		this.config = config;
-		this.provider = new ethers.JsonRpcProvider(config.executionRpcUrl);
+		if (config.mode === "el" && config.executionRpcUrl) {
+			this.provider = new ethers.JsonRpcProvider(config.executionRpcUrl);
+		}
 	}
 
 	/**
@@ -104,6 +134,7 @@ class SmartBlobValidator {
 		);
 		console.log(`   Genesis time: ${this.chainConfig.genesisTime}`);
 		console.log(`   Seconds per slot: ${this.chainConfig.secondsPerSlot}`);
+		console.log(`   Mode: ${this.config.mode.toUpperCase()}`);
 	}
 
 	/**
@@ -198,19 +229,42 @@ class SmartBlobValidator {
 	}
 
 	/**
+	 * Fetch blobs from consensus layer
+	 */
+	private async fetchConsensusBlobs(
+		slot: number,
+	): Promise<Map<number, string>> {
+		const url = `${this.config.consensusRpcUrl}/eth/v1/beacon/blob_sidecars/${slot}`;
+		const response = await fetch(url);
+		const data = await response.json();
+		const consensusBlobs: BlobServiceBlob[] = data.data || [];
+
+		const consensusBlobMap = new Map<number, string>();
+		for (const blob of consensusBlobs) {
+			const index = parseInt(blob.index, 10);
+			const hash = this.calculateVersionedHash(blob.kzg_commitment);
+			consensusBlobMap.set(index, hash);
+		}
+
+		return consensusBlobMap;
+	}
+
+	/**
 	 * Get blob transactions from a block
 	 */
 	private async getBlobTransactions(
 		blockNumber: number,
 	): Promise<ethers.TransactionResponse[]> {
+		if (!this.provider) return [];
 		const block = await this.provider.getBlock(blockNumber, false);
 		if (!block) return [];
 
 		const txHashes = block.transactions as string[];
 
 		// Fetch all transactions in parallel
+		const provider = this.provider;
 		const txPromises = txHashes.map((hash) =>
-			this.provider.getTransaction(hash).catch(() => null),
+			provider.getTransaction(hash).catch(() => null),
 		);
 		const transactions = await Promise.all(txPromises);
 
@@ -240,23 +294,33 @@ class SmartBlobValidator {
 		for (let blockNumber = startBlock; blockNumber <= end; blockNumber++) {
 			currentBlock++;
 
-			// Get block and calculate slot
-			const block = await this.provider.getBlock(blockNumber);
-			if (!block) {
-				console.log(
-					`[${currentBlock}/${totalBlockCount}] ❌ Block ${blockNumber}: not found`,
-				);
-				console.log("\n" + "=".repeat(60));
-				console.log("❌ VALIDATION FAILED");
-				console.log("=".repeat(60));
-				console.log(
-					`Block ${blockNumber} not found - chain may not be synced or block range is invalid`,
-				);
-				console.log("=".repeat(60) + "\n");
-				return { success: false, failedBlobs: 1 };
+			let slot: number;
+			if (this.config.mode === "el") {
+				// Get block and calculate slot
+				if (!this.provider) {
+					console.log("❌ Provider not initialized for EL mode");
+					return { success: false, failedBlobs: 1 };
+				}
+				const block = await this.provider.getBlock(blockNumber);
+				if (!block) {
+					console.log(
+						`[${currentBlock}/${totalBlockCount}] ❌ Block ${blockNumber}: not found`,
+					);
+					console.log("\n" + "=".repeat(60));
+					console.log("❌ VALIDATION FAILED");
+					console.log("=".repeat(60));
+					console.log(
+						`Block ${blockNumber} not found - chain may not be synced or block range is invalid`,
+					);
+					console.log("=".repeat(60) + "\n");
+					return { success: false, failedBlobs: 1 };
+				}
+				slot = this.slotFromTimestamp(Number(block.timestamp));
+			} else {
+				// For CL mode, we need to get the slot from the block number
+				// We'll fetch the first slot to determine the mapping
+				slot = blockNumber; // In CL mode, we treat block number as slot number
 			}
-
-			const slot = this.slotFromTimestamp(Number(block.timestamp));
 
 			// Validate this block
 			const result = await this.validateBlock(
@@ -303,6 +367,24 @@ class SmartBlobValidator {
 	}
 
 	private async validateBlock(
+		blockNumber: number,
+		slot: number,
+		currentBlock: number,
+		totalBlockCount: number,
+	): Promise<{ totalBlobs: number; validatedBlobs: number }> {
+		if (this.config.mode === "el") {
+			return this.validateBlockEL(
+				blockNumber,
+				slot,
+				currentBlock,
+				totalBlockCount,
+			);
+		} else {
+			return this.validateBlockCL(slot, currentBlock, totalBlockCount);
+		}
+	}
+
+	private async validateBlockEL(
 		blockNumber: number,
 		slot: number,
 		currentBlock: number,
@@ -370,15 +452,87 @@ class SmartBlobValidator {
 
 		return { totalBlobs, validatedBlobs };
 	}
+
+	private async validateBlockCL(
+		slot: number,
+		currentBlock: number,
+		totalBlockCount: number,
+	): Promise<{ totalBlobs: number; validatedBlobs: number }> {
+		// Fetch blobs from service
+		const serviceBlobMap = await this.fetchServiceBlobs(slot);
+
+		// Fetch blobs from consensus layer
+		const consensusBlobMap = await this.fetchConsensusBlobs(slot);
+
+		// Show slot info
+		console.log(
+			`[${currentBlock}/${totalBlockCount}] 📦 Slot ${slot}: ${consensusBlobMap.size} blobs in CL`,
+		);
+
+		// Only process if there are blobs
+		if (consensusBlobMap.size === 0) {
+			return { totalBlobs: 0, validatedBlobs: 0 };
+		}
+
+		const totalBlobs = consensusBlobMap.size;
+		let validatedBlobs = 0;
+		let allValid = true;
+
+		// Compare blobs
+		for (const [index, consensusHash] of consensusBlobMap) {
+			const serviceHash = serviceBlobMap.get(index);
+
+			if (!serviceHash) {
+				console.log(`   ❌ Blob ${index}: Missing in service`);
+				allValid = false;
+			} else if (serviceHash.toLowerCase() !== consensusHash.toLowerCase()) {
+				console.log(`   ❌ Blob ${index}: Hash mismatch`);
+				console.log(`      CL:      ${consensusHash}`);
+				console.log(`      Service: ${serviceHash}`);
+				allValid = false;
+			} else {
+				validatedBlobs++;
+			}
+		}
+
+		// Check for extra blobs in service
+		for (const [index, serviceHash] of serviceBlobMap) {
+			if (!consensusBlobMap.has(index)) {
+				console.log(`   ⚠️  Blob ${index}: Extra blob in service (not in CL)`);
+				console.log(`      Service: ${serviceHash}`);
+			}
+		}
+
+		if (allValid && validatedBlobs === totalBlobs) {
+			console.log(`   ✅ All ${totalBlobs} blobs match`);
+		}
+
+		console.log(
+			`   Total: ${totalBlobs} | Validated: ${validatedBlobs} | Failed: ${totalBlobs - validatedBlobs}`,
+		);
+
+		return { totalBlobs, validatedBlobs };
+	}
 }
 
 async function main() {
 	const args = process.argv.slice(2);
 
-	// Parse arguments
-	const chainName = args[0] || "eth";
-	const startBlock = args[1] ? parseInt(args[1]) : undefined;
-	const blocksToValidate = args[2] ? parseInt(args[2]) : 100;
+	// Parse arguments: mode chain [startBlock] [count]
+	const mode = (args[0] || "el") as ValidationMode;
+	const chainName = args[1] || "eth";
+	const startBlock = args[2] ? parseInt(args[2]) : undefined;
+	const blocksToValidate = args[3] ? parseInt(args[3]) : 100;
+
+	// Validate mode
+	if (mode !== "el" && mode !== "cl") {
+		console.error(`❌ Invalid mode: ${mode}`);
+		console.error(`   Supported modes: el, cl`);
+		console.error(
+			`   Usage: bun run validate <mode> <chain> [startBlock] [count]`,
+		);
+		process.exit(1);
+	}
 
 	// Get chain config
 	const chainConfig = CHAIN_CONFIGS[chainName];
@@ -390,21 +544,33 @@ async function main() {
 		process.exit(1);
 	}
 
-	// Generate URLs
-	const executionRpcUrl = `http://${chainName}.rpcx.riv-prod1.pinax.io`;
-	const blobServiceUrl = `https://${chainName}.blobs.pinax.network`;
+	// Get URLs from chain config
+	const { executionRpcUrl, consensusRpcUrl, blobServiceUrl } = chainConfig;
 
-	// Resolve start block (handle negative offsets from latest)
+	// Resolve start block/slot (handle negative offsets from latest)
 	let start: number;
 	if (startBlock === undefined) {
 		start = chainConfig.defaultStartBlock;
 	} else if (startBlock < 0) {
-		const provider = new ethers.JsonRpcProvider(executionRpcUrl);
-		const latestBlock = await provider.getBlockNumber();
-		start = latestBlock + startBlock;
-		console.log(
-			`🔍 Latest block: ${latestBlock}, offset ${startBlock} → starting at ${start}`,
-		);
+		if (mode === "el") {
+			const provider = new ethers.JsonRpcProvider(executionRpcUrl);
+			const latestBlock = await provider.getBlockNumber();
+			start = latestBlock + startBlock;
+			console.log(
+				`🔍 Latest block: ${latestBlock}, offset ${startBlock} → starting at ${start}`,
+			);
+		} else {
+			// CL mode: fetch latest slot from consensus layer
+			const response = await fetch(
+				`${consensusRpcUrl}/eth/v1/beacon/headers/head`,
+			);
+			const data = await response.json();
+			const latestSlot = parseInt(data.data.header.message.slot, 10);
+			start = latestSlot + startBlock;
+			console.log(
+				`🔍 Latest slot: ${latestSlot}, offset ${startBlock} → starting at ${start}`,
+			);
+		}
 	} else {
 		start = startBlock;
 	}
@@ -412,14 +578,21 @@ async function main() {
 	const end = start + blocksToValidate - 1;
 
 	console.log("🚀 Blob Validator");
+	console.log(`   Mode:           ${mode.toUpperCase()}`);
 	console.log(`   Chain:          ${chainConfig.name}`);
-	console.log(`   Execution RPC:  ${executionRpcUrl}`);
+	if (mode === "el") {
+		console.log(`   Execution RPC:  ${executionRpcUrl}`);
+	} else {
+		console.log(`   Consensus RPC:  ${consensusRpcUrl}`);
+	}
 	console.log(`   Blob Service:   ${blobServiceUrl}`);
-	console.log(`   Block Range:    ${start} - ${end}`);
-	console.log(`   Blocks:         ${blocksToValidate}`);
+	console.log(`   Range:          ${start} - ${end}`);
+	console.log(`   Count:          ${blocksToValidate}`);
 
 	const config: ValidationConfig = {
-		executionRpcUrl,
+		mode,
+		executionRpcUrl: mode === "el" ? executionRpcUrl : undefined,
+		consensusRpcUrl: mode === "cl" ? consensusRpcUrl : undefined,
 		blobServiceUrl,
 		startBlock: start,
 		endBlock: end,

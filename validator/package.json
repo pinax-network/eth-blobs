@@ -1,7 +1,7 @@
 {
   "name": "blob-validator",
   "version": "1.0.0",
-  "description": "Validator script to verify blobs in database against execution layer",
+  "description": "Validator script to verify blobs in database against execution layer or consensus layer",
   "type": "module",
   "scripts": {
     "validate": "tsx src/validator.ts",
