@@ -74,6 +74,13 @@ const CHAIN_CONFIGS: Record<string, ChainConfig> = {
 		name: "Chiado",
 		defaultStartBlock: 5000000,
 	},
+	hoodi: {
+		chainId: 17001,
+		genesisTime: 1728891000,
+		secondsPerSlot: 12,
+		name: "Hoodi",
+		defaultStartBlock: 1000000,
+	},
 };
 
 class SmartBlobValidator {
@@ -307,15 +314,15 @@ class SmartBlobValidator {
 		// Get blob transactions from block
 		const blobTxs = await this.getBlobTransactions(blockNumber);
 
+		// Show block info
+		console.log(
+			`[${currentBlock}/${totalBlockCount}] 📦 Block ${blockNumber} (slot ${slot}): ${blobTxs.length} blob txs`,
+		);
+
 		// Only process if there are blob transactions
 		if (blobTxs.length === 0) {
 			return { totalBlobs: 0, validatedBlobs: 0 };
 		}
-
-		console.log(
-			`\n[${currentBlock}/${totalBlockCount}] 📦 Block ${blockNumber} (slot ${slot}):`,
-		);
-		console.log(`   Blob transactions: ${blobTxs.length}`);
 
 		let totalBlobs = 0;
 		let validatedBlobs = 0;
