@@ -176,6 +176,19 @@ class SmartBlobValidator {
 	private async fetchServiceBlobs(slot: number): Promise<Map<number, string>> {
 		const url = `${this.config.blobServiceUrl}/eth/v1/beacon/blob_sidecars/${slot}`;
 		const response = await fetch(url);
+
+		if (!response.ok) {
+			console.warn(
+				`⚠️  Blob service returned ${response.status} for slot ${slot}`,
+			);
+			if (response.status === 404) {
+				return new Map(); // Slot not found, return empty
+			}
+			throw new Error(
+				`Blob service error: ${response.status} ${response.statusText}`,
+			);
+		}
+
 		const data = await response.json();
 		const serviceBlobs: BlobServiceBlob[] = data.data || [];
 
@@ -206,6 +219,19 @@ class SmartBlobValidator {
 	): Promise<Map<number, string>> {
 		const url = `${this.config.consensusRpcUrl}/eth/v1/beacon/blob_sidecars/${slot}`;
 		const response = await fetch(url);
+
+		if (!response.ok) {
+			console.warn(
+				`⚠️  Consensus layer returned ${response.status} for slot ${slot}`,
+			);
+			if (response.status === 404) {
+				return new Map(); // Slot not found, return empty
+			}
+			throw new Error(
+				`Consensus layer error: ${response.status} ${response.statusText}`,
+			);
+		}
+
 		const data = await response.json();
 		const consensusBlobs: BlobServiceBlob[] = data.data || [];
 
