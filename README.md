@@ -17,3 +17,4 @@ Currently, the following chains are supported:
 - Goerli: `goerli-cl.substreams.pinax.network:443`
 - Gnosis: `gnosis-cl.substreams.pinax.network:443`
 - Chiado: `chiado-cl.substreams.pinax.network:443`
+- Chiado: `hoodi-cl.substreams.pinax.network:443`
