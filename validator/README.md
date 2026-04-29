@@ -33,7 +33,7 @@ bun validate <mode> <chain> [start_block] [blocks_to_validate]
 ### Arguments
 
 - **mode**: `el` (execution layer) or `cl` (consensus layer) (default: `el`)
-- **chain**: `eth`, `sepolia`, `holesky`, `gnosis`, `chiado`, `hoodi` (default: `eth`)
+- **chain**: `eth`, `sepolia`, `gnosis`, `hoodi` (default: `eth`)
 - **start_block**: Block number (EL mode) or slot number (CL mode) to start from, or negative offset from latest for EL mode (default: chain-specific)
 - **blocks_to_validate**: Number of blocks/slots to validate (default: `100`)
 
@@ -57,8 +57,8 @@ bun validate el eth -50 50
 # Validate 200 blocks on Sepolia
 bun validate el sepolia
 
-# Validate 10 blocks on Gnosis starting from block 30000000
-bun validate el gnosis 30000000 10
+# Validate 10 blocks on Gnosis starting from block 45000000
+bun validate el gnosis 45000000 10
 ```
 
 #### Consensus Layer (CL) Mode
@@ -70,8 +70,8 @@ bun validate cl eth
 # Validate 50 slots starting from slot 9000000
 bun validate cl eth 9000000 50
 
-# Validate 10 slots on Holesky starting from slot 1000000
-bun validate cl holesky 1000000 10
+# Validate 10 slots on Hoodi starting from slot 1000000
+bun validate cl hoodi 1000000 10
 
 # Validate 200 slots on Sepolia
 bun validate cl sepolia 5000000 200
@@ -224,15 +224,10 @@ This indicates a data integrity issue:
 
 - **eth**: Ethereum Mainnet
 - **sepolia**: Sepolia Testnet
-- **holesky**: Holesky Testnet
 - **gnosis**: Gnosis Chain
-- **chiado**: Chiado Testnet
-- **goerli**: Goerli Testnet (deprecated)
 - **hoodi**: Hoodi Testnet
 
 All chains use Pinax RPC and blob service endpoints automatically.
-
-**Note**: For CL mode, the consensus RPC endpoint is: `http://<chain>-arch909.riv.eosn.io:5052`
 
 ## License
 
