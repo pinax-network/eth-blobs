@@ -41,11 +41,11 @@ func (s *HttpServer) Initialize() {
 	s.Router = gin.New()
 
 	// CORS
-	s.Router.Use(cors.New(cors.Config{
-		AllowAllOrigins: true,
-		AllowMethods:    []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:    []string{"*"},
-	}))
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowMethods = []string{"GET", "OPTIONS"}
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
+	s.Router.Use(cors.New(corsConfig))
 
 	// error handling
 	s.Router.Use(middleware.Recovery(true))
