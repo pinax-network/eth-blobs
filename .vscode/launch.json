@@ -8,9 +8,20 @@
 			"type": "bun",
 			"internalConsoleOptions": "neverOpen",
 			"request": "launch",
-			"name": "Debug Validator (ETH)",
+			"name": "Debug Validator (EL ETH)",
 			"program": "${workspaceFolder}/validator/src/validator.ts",
-			"args": ["eth", "-10", "10"],
+			"args": ["el", "eth", "-10", "10"],
+			"cwd": "${workspaceFolder}/validator",
+			"stopOnEntry": false,
+			"watchMode": false
+		},
+		{
+			"type": "bun",
+			"internalConsoleOptions": "neverOpen",
+			"request": "launch",
+			"name": "Debug Validator (CL ETH)",
+			"program": "${workspaceFolder}/validator/src/validator.ts",
+			"args": ["cl", "eth", "-100", "10"],
 			"cwd": "${workspaceFolder}/validator",
 			"stopOnEntry": false,
 			"watchMode": false

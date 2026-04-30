@@ -4,7 +4,7 @@
   "description": "Validator script to verify blobs in database against execution layer or consensus layer",
   "type": "module",
   "scripts": {
-    "validate": "tsx src/validator.ts",
+    "validate": "bun run src/validator.ts",
     "build": "tsc",
     "start": "node dist/validator.js"
   },
