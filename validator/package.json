@@ -1,0 +1,19 @@
+{
+  "name": "blob-validator",
+  "version": "1.0.0",
+  "description": "Validator script to verify blobs in database against execution layer or consensus layer",
+  "type": "module",
+  "scripts": {
+    "validate": "tsx src/validator.ts",
+    "build": "tsc",
+    "start": "node dist/validator.js"
+  },
+  "dependencies": {
+    "ethers": "^6.11.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  }
+}
