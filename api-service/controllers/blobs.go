@@ -23,8 +23,6 @@ func NewBlobsController(blobsService *services.BlobsService) *BlobsController {
 	return &BlobsController{blobsService: blobsService}
 }
 
-type blobsBySlotRetType []*dto.Blob
-
 // BlobsByBlockId
 //
 //	@Summary	Get Blobs by block id
@@ -32,7 +30,7 @@ type blobsBySlotRetType []*dto.Blob
 //	@Produce	json
 //	@Param		block_id	path		string		true	"Block identifier. Can be one of: 'head', slot number, hex encoded blockRoot with 0x prefix"
 //	@Param		indices		query	 	[]string 	false 	"Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified."
-//	@Success	200		{object}	response.ApiDataResponse{data=blobsBySlotRetType} "Successful response"
+//	@Success	200		{object}	response.ApiDataResponse{data=[]dto.Blob} "Successful response"
 //	@Failure	400		{object}	response.ApiErrorResponse	"invalid_slot"	"Invalid block id"
 //	@Failure	404		{object}	response.ApiErrorResponse	"slot_not_found"	"Slot not found"
 //	@Failure	500		{object}	response.ApiErrorResponse

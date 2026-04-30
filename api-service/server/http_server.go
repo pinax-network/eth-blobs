@@ -78,7 +78,7 @@ func (s *HttpServer) Initialize() {
 }
 
 func (s *HttpServer) Run(wg *sync.WaitGroup) {
-	addr := fmt.Sprintf(s.App.Config.Application.HttpHost)
+	addr := s.App.Config.Application.HttpHost
 	log.SugaredLogger.Infof("start listening for http requests on %s", addr)
 
 	srv := http.Server{Addr: addr, Handler: s.Router}

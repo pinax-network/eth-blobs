@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -65,7 +64,7 @@ func (s *GrpcServer) Initialize() {
 
 func (s *GrpcServer) Run(wg *sync.WaitGroup) {
 
-	addr := fmt.Sprintf(s.App.Config.Application.GrpcHost)
+	addr := s.App.Config.Application.GrpcHost
 	lis, err := net.Listen("tcp", addr)
 	log.FatalIfError("failed to listen on GRPC address", err)
 	log.SugaredLogger.Infof("start listening for grpc requests on %s", addr)
