@@ -17,6 +17,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/friendsofgo/errors"
+	"github.com/gin-contrib/cors"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/pinax-network/golang-base/helper"
@@ -38,6 +39,13 @@ func (s *HttpServer) Initialize() {
 	swagger.SwaggerInfo.Description = "Use this API to get " + s.App.Config.Chain.Name + " EIP-4844 blobs as a drop-in replacement for Consensus Layer clients API."
 
 	s.Router = gin.New()
+
+	// CORS
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowMethods = []string{"GET", "OPTIONS"}
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
+	s.Router.Use(cors.New(corsConfig))
 
 	// error handling
 	s.Router.Use(middleware.Recovery(true))
@@ -70,7 +78,7 @@ func (s *HttpServer) Initialize() {
 }
 
 func (s *HttpServer) Run(wg *sync.WaitGroup) {
-	addr := fmt.Sprintf(s.App.Config.Application.HttpHost)
+	addr := s.App.Config.Application.HttpHost
 	log.SugaredLogger.Infof("start listening for http requests on %s", addr)
 
 	srv := http.Server{Addr: addr, Handler: s.Router}

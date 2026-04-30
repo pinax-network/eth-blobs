@@ -10,7 +10,7 @@ import (
 
 	pbkv "github.com/streamingfast/substreams-sink-kv/pb/substreams/sink/kv/v1"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 type BlobsService struct {
