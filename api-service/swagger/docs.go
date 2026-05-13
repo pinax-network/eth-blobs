@@ -47,22 +47,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successful response",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.ApiDataResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/dto.Blob"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/dto.BlobSidecarsResponse"
                         }
                     },
                     "400": {
@@ -272,6 +257,23 @@ const docTemplate = `{
                 },
                 "signed_block_header": {
                     "$ref": "#/definitions/dto.SignedBlockHeader"
+                }
+            }
+        },
+        "dto.BlobSidecarsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Blob"
+                    }
+                },
+                "execution_optimistic": {
+                    "type": "boolean"
+                },
+                "finalized": {
+                    "type": "boolean"
                 }
             }
         },

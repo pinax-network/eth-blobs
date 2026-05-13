@@ -44,6 +44,17 @@ definitions:
       signed_block_header:
         $ref: '#/definitions/dto.SignedBlockHeader'
     type: object
+  dto.BlobSidecarsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.Blob'
+        type: array
+      execution_optimistic:
+        type: boolean
+      finalized:
+        type: boolean
+    type: object
   dto.BlobsResponse:
     properties:
       data:
@@ -135,14 +146,7 @@ paths:
         "200":
           description: Successful response
           schema:
-            allOf:
-            - $ref: '#/definitions/response.ApiDataResponse'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/dto.Blob'
-                  type: array
-              type: object
+            $ref: '#/definitions/dto.BlobSidecarsResponse'
         "400":
           description: "invalid_slot\"\t\"Invalid block id"
           schema:

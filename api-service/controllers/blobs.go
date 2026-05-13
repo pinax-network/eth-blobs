@@ -11,9 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pinax-network/golang-base/log"
-	"github.com/pinax-network/golang-base/response"
-	"go.uber.org/zap"
+	_ "github.com/pinax-network/golang-base/response" // referenced by swagger annotations
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -33,7 +31,7 @@ func NewBlobsController(blobsService *services.BlobsService) *BlobsController {
 //	@Produce	json
 //	@Param		block_id	path		string		true	"Block identifier. Can be one of: 'head', slot number, hex encoded blockRoot with 0x prefix"
 //	@Param		indices		query	 	[]string 	false 	"Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified."
-//	@Success	200		{object}	response.ApiDataResponse{data=[]dto.Blob} "Successful response"
+//	@Success	200		{object}	dto.BlobSidecarsResponse "Successful response"
 //	@Failure	400		{object}	response.ApiErrorResponse	"invalid_slot"	"Invalid block id"
 //	@Failure	404		{object}	response.ApiErrorResponse	"slot_not_found"	"Slot not found"
 //	@Failure	500		{object}	response.ApiErrorResponse
@@ -57,7 +55,7 @@ func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	slot, err := bc.blobsService.GetSlotByBlockId(ctx, blockId)
+	slot, headSlot, err := bc.blobsService.GetSlotByBlockId(ctx, blockId)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			internal.WriteErrorResponse(c, internal.ErrSinkTimeout)
@@ -79,7 +77,11 @@ func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 		}
 	}
 
-	response.OkDataResponse(c, &response.ApiDataResponse{Data: resBlobs})
+	c.JSON(http.StatusOK, dto.BlobSidecarsResponse{
+		ExecutionOptimistic: false,
+		Finalized:           bc.blobsService.IsFinalized(slot.Slot, headSlot),
+		Data:                resBlobs,
+	})
 }
 
 // BlobsByBlockIdV2 implements the Beacon API v4.0.0 endpoint that replaces
@@ -124,7 +126,7 @@ func (bc *BlobsController) BlobsByBlockIdV2(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	slot, err := bc.blobsService.GetSlotByBlockId(ctx, blockId)
+	slot, headSlot, err := bc.blobsService.GetSlotByBlockId(ctx, blockId)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			internal.WriteErrorResponse(c, internal.ErrSinkTimeout)
@@ -150,17 +152,9 @@ func (bc *BlobsController) BlobsByBlockIdV2(c *gin.Context) {
 		data = append(data, dto.HexBytes(blob.Blob))
 	}
 
-	// Heuristic: slot is reported finalized once head is at least
-	// chain.finality_lag slots ahead of it. If the head lookup fails we
-	// fall back to a conservative finalized=false.
-	finalized, ferr := bc.blobsService.IsFinalized(ctx, slot.Slot)
-	if ferr != nil {
-		log.Warn("failed to determine finality, defaulting to finalized=false", zap.Error(ferr))
-	}
-
 	c.JSON(http.StatusOK, dto.BlobsResponse{
 		ExecutionOptimistic: false,
-		Finalized:           finalized,
+		Finalized:           bc.blobsService.IsFinalized(slot.Slot, headSlot),
 		Data:                data,
 	})
 }

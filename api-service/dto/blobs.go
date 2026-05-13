@@ -30,6 +30,14 @@ type BlobsResponse struct {
 	Data                []HexBytes `json:"data" swaggertype:"array,string"`
 }
 
+// BlobSidecarsResponse is the response shape for the deprecated
+// GET /eth/v1/beacon/blob_sidecars/{block_id} endpoint.
+type BlobSidecarsResponse struct {
+	ExecutionOptimistic bool    `json:"execution_optimistic"`
+	Finalized           bool    `json:"finalized"`
+	Data                []*Blob `json:"data"`
+}
+
 type SignedBlockHeader struct {
 	Message   *Message `json:"message"`
 	Signature HexBytes `json:"signature"`
