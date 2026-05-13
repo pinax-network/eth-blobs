@@ -6,6 +6,7 @@ application:
 
 chain:
   name: "Ethereum"      # The name of the chain for Swagger documentation
+  # finality_lag: 64    # Optional. Defaults to 64 (Ethereum mainnet, 2 epochs). Gnosis: 32.
 
 sink:
   address: "host.docker.internal:8000" # The gRPC host of the sink server

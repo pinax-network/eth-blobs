@@ -47,22 +47,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successful response",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.ApiDataResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/dto.Blob"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/dto.BlobSidecarsResponse"
                         }
                     },
                     "400": {
@@ -98,7 +83,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Block identifier. Can be one of: 'head', 'genesis', 'finalized', slot number, or 0x-prefixed hex block root",
+                        "description": "Block identifier. Can be one of: 'head', slot number, or 0x-prefixed hex block root",
                         "name": "block_id",
                         "in": "path",
                         "required": true
@@ -272,6 +257,23 @@ const docTemplate = `{
                 },
                 "signed_block_header": {
                     "$ref": "#/definitions/dto.SignedBlockHeader"
+                }
+            }
+        },
+        "dto.BlobSidecarsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Blob"
+                    }
+                },
+                "execution_optimistic": {
+                    "type": "boolean"
+                },
+                "finalized": {
+                    "type": "boolean"
                 }
             }
         },
