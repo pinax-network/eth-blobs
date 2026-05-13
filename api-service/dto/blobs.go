@@ -16,6 +16,20 @@ type Blob struct {
 	KzgCommitmentInclusionProof []HexBytes        `json:"kzg_commitment_inclusion_proof"`
 }
 
+// BlobsResponse is the response shape for GET /eth/v1/beacon/blobs/{block_id}
+// (Beacon API v4.0.0). It returns the raw blob data only — KZG commitments,
+// proofs, and inclusion proofs are omitted compared to the deprecated
+// blob_sidecars endpoint.
+//
+// The Data field marshals as an array of 0x-prefixed hex strings (see
+// HexBytes.MarshalJSON), so the swaggertype override below documents it
+// as such rather than as the raw []byte the Go type implies.
+type BlobsResponse struct {
+	ExecutionOptimistic bool       `json:"execution_optimistic"`
+	Finalized           bool       `json:"finalized"`
+	Data                []HexBytes `json:"data" swaggertype:"array,string"`
+}
+
 type SignedBlockHeader struct {
 	Message   *Message `json:"message"`
 	Signature HexBytes `json:"signature"`

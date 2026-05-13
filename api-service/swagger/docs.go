@@ -86,6 +86,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/eth/v1/beacon/blobs/{block_id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "blobs"
+                ],
+                "summary": "Get Blobs by block id (Beacon API v4.0.0)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Block identifier. Can be one of: 'head', 'genesis', 'finalized', slot number, or 0x-prefixed hex block root",
+                        "name": "block_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "Comma-separated list of 0x-prefixed 32-byte versioned hashes. Returns all blobs in the block if not specified.",
+                        "name": "versioned_hashes",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlobsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid_slot or invalid_versioned_hash",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "slot_not_found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "produces": [
@@ -216,6 +272,23 @@ const docTemplate = `{
                 },
                 "signed_block_header": {
                     "$ref": "#/definitions/dto.SignedBlockHeader"
+                }
+            }
+        },
+        "dto.BlobsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "execution_optimistic": {
+                    "type": "boolean"
+                },
+                "finalized": {
+                    "type": "boolean"
                 }
             }
         },

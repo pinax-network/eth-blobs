@@ -69,6 +69,7 @@ func (s *HttpServer) Initialize() {
 
 	v1 := s.Router.Group("/eth/v1")
 	v1.GET("beacon/blob_sidecars/:block_id", blobsController.BlobsByBlockId)
+	v1.GET("beacon/blobs/:block_id", blobsController.BlobsByBlockIdV2)
 
 	s.Router.GET("/health", healthController.Health)
 

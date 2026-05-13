@@ -12,17 +12,19 @@ import (
 )
 
 var (
-	ErrSinkTimeout  = errors.New("timeout when trying to reach the sink service")
-	ErrSlotNotFound = errors.New("slot not found")
-	ErrInvalidSlot  = errors.New("invalid slot")
-	ErrInvalidIndex = errors.New("invalid index")
+	ErrSinkTimeout          = errors.New("timeout when trying to reach the sink service")
+	ErrSlotNotFound         = errors.New("slot not found")
+	ErrInvalidSlot          = errors.New("invalid slot")
+	ErrInvalidIndex         = errors.New("invalid index")
+	ErrInvalidVersionedHash = errors.New("invalid versioned hash")
 )
 
 const (
-	NOT_FOUND_SLOT = "slot_not_found"
-	INVALID_SLOT   = "invalid_slot"
-	INVALID_INDEX  = "invalid_index"
-	SINK_TIMEOUT   = "sink_timeout"
+	NOT_FOUND_SLOT         = "slot_not_found"
+	INVALID_SLOT           = "invalid_slot"
+	INVALID_INDEX          = "invalid_index"
+	INVALID_VERSIONED_HASH = "invalid_versioned_hash"
+	SINK_TIMEOUT           = "sink_timeout"
 )
 
 func WriteErrorResponse(c *gin.Context, err error) {
@@ -40,6 +42,10 @@ func WriteErrorResponse(c *gin.Context, err error) {
 	}
 	if errors.Is(err, ErrInvalidIndex) {
 		helper.ReportPublicErrorAndAbort(c, response.NewApiErrorBadRequest(INVALID_INDEX), err)
+		return
+	}
+	if errors.Is(err, ErrInvalidVersionedHash) {
+		helper.ReportPublicErrorAndAbort(c, response.NewApiErrorBadRequest(INVALID_VERSIONED_HASH), err)
 		return
 	}
 

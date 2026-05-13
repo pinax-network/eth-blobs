@@ -44,6 +44,17 @@ definitions:
       signed_block_header:
         $ref: '#/definitions/dto.SignedBlockHeader'
     type: object
+  dto.BlobsResponse:
+    properties:
+      data:
+        items:
+          type: string
+        type: array
+      execution_optimistic:
+        type: boolean
+      finalized:
+        type: boolean
+    type: object
   dto.Message:
     properties:
       body_root:
@@ -145,6 +156,45 @@ paths:
           schema:
             $ref: '#/definitions/response.ApiErrorResponse'
       summary: Get Blobs by block id
+      tags:
+      - blobs
+  /eth/v1/beacon/blobs/{block_id}:
+    get:
+      parameters:
+      - description: 'Block identifier. Can be one of: ''head'', ''genesis'', ''finalized'',
+          slot number, or 0x-prefixed hex block root'
+        in: path
+        name: block_id
+        required: true
+        type: string
+      - collectionFormat: csv
+        description: Comma-separated list of 0x-prefixed 32-byte versioned hashes.
+          Returns all blobs in the block if not specified.
+        in: query
+        items:
+          type: string
+        name: versioned_hashes
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful response
+          schema:
+            $ref: '#/definitions/dto.BlobsResponse'
+        "400":
+          description: invalid_slot or invalid_versioned_hash
+          schema:
+            $ref: '#/definitions/response.ApiErrorResponse'
+        "404":
+          description: slot_not_found
+          schema:
+            $ref: '#/definitions/response.ApiErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ApiErrorResponse'
+      summary: Get Blobs by block id (Beacon API v4.0.0)
       tags:
       - blobs
   /health:
