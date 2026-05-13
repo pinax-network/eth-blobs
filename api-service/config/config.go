@@ -6,6 +6,11 @@ import (
 
 type ChainConfig struct {
 	Name string `yaml:"name" json:"name" mapstructure:"name" validate:"required"`
+	// FinalityLag is the number of slots a block must be behind head before
+	// it is reported as `finalized` in beacon API responses. Pick a value
+	// at least 2 epochs (Ethereum/Sepolia/Hoodi: 64, Gnosis: 32); choose
+	// larger for extra safety margin during non-finality risk.
+	FinalityLag uint64 `yaml:"finality_lag" json:"finality_lag" mapstructure:"finality_lag" validate:"required"`
 }
 
 type SinkConfig struct {

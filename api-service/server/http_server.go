@@ -63,7 +63,7 @@ func (s *HttpServer) Initialize() {
 	s.Router.NoRoute(NoRoute)
 	s.Router.NoMethod(NoMethod)
 
-	blobsService := services.NewBlobsService(s.App.SinkClient)
+	blobsService := services.NewBlobsService(s.App.SinkClient, s.App.Config.Chain.FinalityLag)
 	blobsController := controllers.NewBlobsController(blobsService)
 	healthController := controllers.NewHealthController(blobsService)
 

@@ -11,7 +11,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pinax-network/golang-base/log"
 	"github.com/pinax-network/golang-base/response"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -85,6 +87,13 @@ func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 // flat list of blob byte strings, ordered by KZG commitment order in the
 // block, and filterable by versioned hash rather than blob index.
 //
+// The `finalized` flag is derived heuristically from the slot's distance
+// from head (≥ chain.finality_lag slots → finalized) rather than from the
+// consensus-layer finality checkpoint. This is accurate under normal
+// conditions but can over-report during extended non-finality periods.
+// `execution_optimistic` is always false — the backing sink only persists
+// fully-validated data.
+//
 //	@Summary	Get Blobs by block id (Beacon API v4.0.0)
 //	@Tags		blobs
 //	@Produce	json
@@ -141,9 +150,17 @@ func (bc *BlobsController) BlobsByBlockIdV2(c *gin.Context) {
 		data = append(data, dto.HexBytes(blob.Blob))
 	}
 
+	// Heuristic: slot is reported finalized once head is at least
+	// chain.finality_lag slots ahead of it. If the head lookup fails we
+	// fall back to a conservative finalized=false.
+	finalized, ferr := bc.blobsService.IsFinalized(ctx, slot.Slot)
+	if ferr != nil {
+		log.Warn("failed to determine finality, defaulting to finalized=false", zap.Error(ferr))
+	}
+
 	c.JSON(http.StatusOK, dto.BlobsResponse{
 		ExecutionOptimistic: false,
-		Finalized:           false,
+		Finalized:           finalized,
 		Data:                data,
 	})
 }

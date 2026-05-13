@@ -161,8 +161,8 @@ paths:
   /eth/v1/beacon/blobs/{block_id}:
     get:
       parameters:
-      - description: 'Block identifier. Can be one of: ''head'', ''genesis'', ''finalized'',
-          slot number, or 0x-prefixed hex block root'
+      - description: 'Block identifier. Can be one of: ''head'', slot number, or 0x-prefixed
+          hex block root'
         in: path
         name: block_id
         required: true

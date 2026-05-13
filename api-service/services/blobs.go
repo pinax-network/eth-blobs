@@ -14,11 +14,35 @@ import (
 )
 
 type BlobsService struct {
-	sinkClient pbkv.KvClient
+	sinkClient  pbkv.KvClient
+	finalityLag uint64
 }
 
-func NewBlobsService(sinkClient pbkv.KvClient) *BlobsService {
-	return &BlobsService{sinkClient: sinkClient}
+func NewBlobsService(sinkClient pbkv.KvClient, finalityLag uint64) *BlobsService {
+	return &BlobsService{sinkClient: sinkClient, finalityLag: finalityLag}
+}
+
+// GetHeadSlot returns the current head slot from the sink.
+func (bs *BlobsService) GetHeadSlot(ctx context.Context) (uint64, error) {
+	resp, err := bs.sinkClient.Get(ctx, &pbkv.GetRequest{Key: "head"})
+	if err != nil {
+		return 0, err
+	}
+	return binary.BigEndian.Uint64(resp.GetValue()), nil
+}
+
+// IsFinalized returns true when the given slot is at least `finalityLag`
+// slots behind head. This is a heuristic, not a real consensus-layer
+// finality check — under normal conditions blocks finalize within 2 epochs,
+// but extended non-finality periods can produce false positives. On head
+// lookup error this returns (false, err) so callers can fall back to a
+// conservative finalized=false.
+func (bs *BlobsService) IsFinalized(ctx context.Context, slot uint64) (bool, error) {
+	head, err := bs.GetHeadSlot(ctx)
+	if err != nil {
+		return false, err
+	}
+	return head >= slot+bs.finalityLag, nil
 }
 
 func (bc *BlobsService) GetSlotNumber(ctx context.Context, block_id string) (uint64, error) {
