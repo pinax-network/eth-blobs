@@ -6,6 +6,14 @@ GET http://localhost:8080/eth/v1/beacon/blob_sidecars/head
 
 ###
 
+GET http://localhost:8080/eth/v1/beacon/blobs/7677000
+
+###
+
+GET http://localhost:8080/eth/v1/beacon/blobs/head
+
+###
+
 GET http://localhost:8080/health
 
 

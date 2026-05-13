@@ -42,6 +42,17 @@
 			"name": "Attach Bun",
 			"url": "ws://localhost:6499/",
 			"stopOnEntry": false
+		},
+		{
+			"type": "go",
+			"name": "Debug API Service",
+			"request": "launch",
+			"mode": "auto",
+			"program": "${workspaceFolder}/api-service",
+			"env": {
+				"CONFIG_PATH": "${workspaceFolder}/api-service/config.yaml"
+			},
+			"cwd": "${workspaceFolder}/api-service"
 		}
 	]
 }
