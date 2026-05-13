@@ -281,10 +281,7 @@ const docTemplate = `{
                 "data": {
                     "type": "array",
                     "items": {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        }
+                        "type": "string"
                     }
                 },
                 "execution_optimistic": {

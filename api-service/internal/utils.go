@@ -24,8 +24,10 @@ func VersionedHashFromCommitment(commitment []byte) [32]byte {
 	return h
 }
 
-// ParseVersionedHash decodes a "0x"-prefixed 32-byte versioned hash string.
-// Returns ErrInvalidVersionedHash if the input is malformed.
+// ParseVersionedHash decodes a "0x"-prefixed 32-byte versioned hash string
+// and rejects anything whose first byte is not the EIP-4844 blob-commitment
+// version byte (0x01). Without that check, a malformed hash silently matches
+// nothing instead of returning ErrInvalidVersionedHash.
 func ParseVersionedHash(s string) ([32]byte, error) {
 	var out [32]byte
 	if !strings.HasPrefix(s, "0x") && !strings.HasPrefix(s, "0X") {
@@ -33,6 +35,9 @@ func ParseVersionedHash(s string) ([32]byte, error) {
 	}
 	b, err := hex.DecodeString(s[2:])
 	if err != nil || len(b) != 32 {
+		return out, ErrInvalidVersionedHash
+	}
+	if b[0] != 0x01 {
 		return out, ErrInvalidVersionedHash
 	}
 	copy(out[:], b)
