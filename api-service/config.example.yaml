@@ -6,7 +6,7 @@ application:
 
 chain:
   name: "Ethereum"              # The name of the chain
-  finality_lag: 64              # Slots behind head before a slot is reported finalized. >=2 epochs (Ethereum/Sepolia/Hoodi: 64, Gnosis: 32). Pick higher for extra safety.
+  # finality_lag: 64            # Optional. Slots behind head before a slot is reported finalized. Defaults to 64 (Ethereum mainnet, 2 epochs). Gnosis: 32. Higher = more conservative.
 
 sink:
   address: "localhost:8000"     # The gRPC host of the sink server

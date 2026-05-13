@@ -1,6 +1,7 @@
 package server
 
 import (
+	"blob-service/config"
 	"blob-service/controllers"
 	"blob-service/services"
 	"blob-service/swagger"
@@ -63,7 +64,11 @@ func (s *HttpServer) Initialize() {
 	s.Router.NoRoute(NoRoute)
 	s.Router.NoMethod(NoMethod)
 
-	blobsService := services.NewBlobsService(s.App.SinkClient, s.App.Config.Chain.FinalityLag)
+	finalityLag := config.DefaultFinalityLag
+	if s.App.Config.Chain.FinalityLag != nil {
+		finalityLag = *s.App.Config.Chain.FinalityLag
+	}
+	blobsService := services.NewBlobsService(s.App.SinkClient, finalityLag)
 	blobsController := controllers.NewBlobsController(blobsService)
 	healthController := controllers.NewHealthController(blobsService)
 
