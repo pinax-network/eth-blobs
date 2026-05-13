@@ -88,7 +88,7 @@ func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 //	@Summary	Get Blobs by block id (Beacon API v4.0.0)
 //	@Tags		blobs
 //	@Produce	json
-//	@Param		block_id			path		string		true	"Block identifier. Can be one of: 'head', 'genesis', 'finalized', slot number, or 0x-prefixed hex block root"
+//	@Param		block_id			path		string		true	"Block identifier. Can be one of: 'head', slot number, or 0x-prefixed hex block root"
 //	@Param		versioned_hashes	query		[]string	false	"Comma-separated list of 0x-prefixed 32-byte versioned hashes. Returns all blobs in the block if not specified."
 //	@Success	200		{object}	dto.BlobsResponse	"Successful response"
 //	@Failure	400		{object}	response.ApiErrorResponse	"invalid_slot or invalid_versioned_hash"
