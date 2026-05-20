@@ -133,8 +133,8 @@ func TestBlobSidecarsResponseJSONShape(t *testing.T) {
 	for _, want := range []string{
 		`"execution_optimistic":false`,
 		`"finalized":true`,
-		`"index":"5"`,            // StrU64 → JSON string
-		`"slot":"1"`,             // nested in signed_block_header
+		`"index":"5"`, // StrU64 → JSON string
+		`"slot":"1"`,  // nested in signed_block_header
 		`"proposer_index":"2"`,
 		`"blob":"0xab"`,
 	} {
