@@ -30,7 +30,7 @@ func NewBlobsController(blobsService *services.BlobsService) *BlobsController {
 //	@Tags		blobs
 //	@Produce	json
 //	@Param		block_id	path		string		true	"Block identifier. Can be one of: 'head', slot number, hex encoded blockRoot with 0x prefix"
-//	@Param		indices		query	 	[]string 	false 	"Blob sidecar indices to return. Accepts repeated keys (?indices=0&indices=1) or comma-separated (?indices=0,1). Returns all if omitted."
+//	@Param		indices		query	 	[]string 	false 	"Blob sidecar indices to return. Accepts repeated keys (?indices=0&indices=1) or comma-separated (?indices=0,1). Returns all if omitted." collectionFormat(multi)
 //	@Success	200		{object}	dto.BlobSidecarsResponse "Successful response"
 //	@Failure	400		{object}	response.ApiErrorResponse	"invalid_slot"	"Invalid block id"
 //	@Failure	404		{object}	response.ApiErrorResponse	"slot_not_found"	"Slot not found"
@@ -105,7 +105,7 @@ func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 //	@Tags		blobs
 //	@Produce	json
 //	@Param		block_id			path		string		true	"Block identifier. Can be one of: 'head', slot number, or 0x-prefixed hex block root"
-//	@Param		versioned_hashes	query		[]string	false	"0x-prefixed 32-byte versioned hashes to filter by. Accepts repeated keys (?versioned_hashes=0x01..&versioned_hashes=0x01..) or comma-separated. Returns all blobs if omitted."
+//	@Param		versioned_hashes	query		[]string	false	"0x-prefixed 32-byte versioned hashes to filter by. Accepts repeated keys (?versioned_hashes=0x01..&versioned_hashes=0x01..) or comma-separated. Returns all blobs if omitted." collectionFormat(multi)
 //	@Success	200		{object}	dto.BlobsResponse	"Successful response"
 //	@Failure	400		{object}	response.ApiErrorResponse	"invalid_slot or invalid_versioned_hash"
 //	@Failure	404		{object}	response.ApiErrorResponse	"slot_not_found"

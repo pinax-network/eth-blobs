@@ -107,10 +107,18 @@ func TestBlobsByBlockIdV2_ResponseShape(t *testing.T) {
 		}
 	}
 	// blob at "head" slot is at distance 0 from head; lag=64 → not finalized.
-	if body["finalized"].(bool) {
+	finalized, ok := body["finalized"].(bool)
+	if !ok {
+		t.Fatalf("finalized: not a bool, got %T (%v)", body["finalized"], body["finalized"])
+	}
+	if finalized {
 		t.Errorf("expected finalized=false for head request with lag=64")
 	}
-	if body["execution_optimistic"].(bool) {
+	optimistic, ok := body["execution_optimistic"].(bool)
+	if !ok {
+		t.Fatalf("execution_optimistic: not a bool, got %T (%v)", body["execution_optimistic"], body["execution_optimistic"])
+	}
+	if optimistic {
 		t.Errorf("expected execution_optimistic=false")
 	}
 }

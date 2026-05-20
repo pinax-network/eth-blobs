@@ -34,7 +34,7 @@
                         "items": {
                             "type": "string"
                         },
-                        "collectionFormat": "csv",
+                        "collectionFormat": "multi",
                         "description": "Blob sidecar indices to return. Accepts repeated keys (?indices=0\u0026indices=1) or comma-separated (?indices=0,1). Returns all if omitted.",
                         "name": "indices",
                         "in": "query"
@@ -90,7 +90,7 @@
                         "items": {
                             "type": "string"
                         },
-                        "collectionFormat": "csv",
+                        "collectionFormat": "multi",
                         "description": "0x-prefixed 32-byte versioned hashes to filter by. Accepts repeated keys (?versioned_hashes=0x01..\u0026versioned_hashes=0x01..) or comma-separated. Returns all blobs if omitted.",
                         "name": "versioned_hashes",
                         "in": "query"
