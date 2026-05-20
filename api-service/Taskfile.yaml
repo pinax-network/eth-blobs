@@ -122,6 +122,11 @@ tasks:
           then exit 1;
         fi
 
+  test:
+    desc: "Runs the Go test suite"
+    cmds:
+      - go test ./...
+
   install:deps:
     desc: "Install Go dependencies such as swaggo to generate docs. The task gets the appropriate version from the go.mod file"
     cmds:

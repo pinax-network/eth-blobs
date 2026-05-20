@@ -30,7 +30,7 @@ func NewBlobsController(blobsService *services.BlobsService) *BlobsController {
 //	@Tags		blobs
 //	@Produce	json
 //	@Param		block_id	path		string		true	"Block identifier. Can be one of: 'head', slot number, hex encoded blockRoot with 0x prefix"
-//	@Param		indices		query	 	[]string 	false 	"Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified."
+//	@Param		indices		query	 	[]string 	false 	"Blob sidecar indices to return. Accepts repeated keys (?indices=0&indices=1) or comma-separated (?indices=0,1). Returns all if omitted." collectionFormat(multi)
 //	@Success	200		{object}	dto.BlobSidecarsResponse "Successful response"
 //	@Failure	400		{object}	response.ApiErrorResponse	"invalid_slot"	"Invalid block id"
 //	@Failure	404		{object}	response.ApiErrorResponse	"slot_not_found"	"Slot not found"
@@ -40,16 +40,21 @@ func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 
 	blockId := c.Param("block_id")
 	indices := []uint32{}
-	for _, str := range strings.Split(c.Query("indices"), ",") {
-		if str == "" {
-			continue
+	// Accept both comma-separated (?indices=1,2,3) and repeated-key
+	// (?indices=1&indices=2) styles. Lighthouse uses the repeated form;
+	// older clients of ours use the comma form.
+	for _, raw := range c.QueryArray("indices") {
+		for _, str := range strings.Split(raw, ",") {
+			if str == "" {
+				continue
+			}
+			i, err := strconv.ParseUint(str, 10, 32)
+			if err != nil {
+				internal.WriteErrorResponse(c, internal.ErrInvalidIndex)
+				return
+			}
+			indices = append(indices, uint32(i))
 		}
-		i, err := strconv.ParseUint(str, 10, 32)
-		if err != nil {
-			internal.WriteErrorResponse(c, internal.ErrInvalidIndex)
-			return
-		}
-		indices = append(indices, uint32(i))
 	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
@@ -100,7 +105,7 @@ func (bc *BlobsController) BlobsByBlockId(c *gin.Context) {
 //	@Tags		blobs
 //	@Produce	json
 //	@Param		block_id			path		string		true	"Block identifier. Can be one of: 'head', slot number, or 0x-prefixed hex block root"
-//	@Param		versioned_hashes	query		[]string	false	"Comma-separated list of 0x-prefixed 32-byte versioned hashes. Returns all blobs in the block if not specified."
+//	@Param		versioned_hashes	query		[]string	false	"0x-prefixed 32-byte versioned hashes to filter by. Accepts repeated keys (?versioned_hashes=0x01..&versioned_hashes=0x01..) or comma-separated. Returns all blobs if omitted." collectionFormat(multi)
 //	@Success	200		{object}	dto.BlobsResponse	"Successful response"
 //	@Failure	400		{object}	response.ApiErrorResponse	"invalid_slot or invalid_versioned_hash"
 //	@Failure	404		{object}	response.ApiErrorResponse	"slot_not_found"
@@ -111,16 +116,21 @@ func (bc *BlobsController) BlobsByBlockIdV2(c *gin.Context) {
 	blockId := c.Param("block_id")
 
 	hashFilter := map[[32]byte]struct{}{}
-	for _, str := range strings.Split(c.Query("versioned_hashes"), ",") {
-		if str == "" {
-			continue
+	// Accept both comma-separated (?versioned_hashes=0x01...,0x01...) and
+	// repeated-key (?versioned_hashes=0x01...&versioned_hashes=0x01...)
+	// styles. Lighthouse uses the repeated form.
+	for _, raw := range c.QueryArray("versioned_hashes") {
+		for _, str := range strings.Split(raw, ",") {
+			if str == "" {
+				continue
+			}
+			h, err := internal.ParseVersionedHash(str)
+			if err != nil {
+				internal.WriteErrorResponse(c, internal.ErrInvalidVersionedHash)
+				return
+			}
+			hashFilter[h] = struct{}{}
 		}
-		h, err := internal.ParseVersionedHash(str)
-		if err != nil {
-			internal.WriteErrorResponse(c, internal.ErrInvalidVersionedHash)
-			return
-		}
-		hashFilter[h] = struct{}{}
 	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)

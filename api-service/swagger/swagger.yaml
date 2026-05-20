@@ -132,9 +132,9 @@ paths:
         name: block_id
         required: true
         type: string
-      - collectionFormat: csv
-        description: Array of indices for blob sidecars to request for in the specified
-          block. Returns all blob sidecars in the block if not specified.
+      - collectionFormat: multi
+        description: Blob sidecar indices to return. Accepts repeated keys (?indices=0&indices=1)
+          or comma-separated (?indices=0,1). Returns all if omitted.
         in: query
         items:
           type: string
@@ -171,9 +171,10 @@ paths:
         name: block_id
         required: true
         type: string
-      - collectionFormat: csv
-        description: Comma-separated list of 0x-prefixed 32-byte versioned hashes.
-          Returns all blobs in the block if not specified.
+      - collectionFormat: multi
+        description: 0x-prefixed 32-byte versioned hashes to filter by. Accepts repeated
+          keys (?versioned_hashes=0x01..&versioned_hashes=0x01..) or comma-separated.
+          Returns all blobs if omitted.
         in: query
         items:
           type: string
