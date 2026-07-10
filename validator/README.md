@@ -87,7 +87,7 @@ The validator provides detailed output with progress tracking:
 🚀 Blob Validator
    Mode:           EL
    Chain:          Ethereum Mainnet
-   Execution RPC:  http://eth.rpcx.riv-prod1.pinax.io
+   Execution RPC:  http://eth.rpcx.kan-prod-rpc-a.pinax.io
    Blob Service:   https://eth.blobs.pinax.network
    Range:          24986100 - 24986109
    Count:          10
