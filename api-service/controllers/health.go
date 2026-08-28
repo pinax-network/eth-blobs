@@ -46,3 +46,12 @@ func (hc *HealthController) Health(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
+
+// Liveness
+// @Summary Lightweight liveness check without querying the backend.
+// @Tags health
+// @Success 200
+// @Router /health [head]
+func (hc *HealthController) Liveness(c *gin.Context) {
+	c.Status(http.StatusOK)
+}

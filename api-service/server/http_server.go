@@ -77,6 +77,7 @@ func (s *HttpServer) Initialize() {
 	v1.GET("beacon/blobs/:block_id", blobsController.BlobsByBlockIdV2)
 
 	s.Router.GET("/health", healthController.Health)
+	s.Router.HEAD("/health", healthController.Liveness)
 
 	s.Router.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
