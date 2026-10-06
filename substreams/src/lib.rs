@@ -10,42 +10,24 @@ use crate::pb::sf::substreams::sink::kv::v1::{kv_operation::Type, KvOperation};
 
 #[substreams::handlers::map]
 fn map_blobs(blk: BeaconBlock) -> Result<Slot, substreams::errors::Error> {
-    let blobs = match blk.body.unwrap() {
-        Deneb(body) => body
-            .embedded_blobs
-            .into_iter()
-            .map(|b| Blob {
-                index: b.index as u32,
-                blob: b.blob,
-                kzg_commitment: b.kzg_commitment,
-                kzg_proof: b.kzg_proof,
-                kzg_commitment_inclusion_proof: b.kzg_commitment_inclusion_proof,
-            })
-            .collect(),
-        Electra(body) => body
-            .embedded_blobs
-            .into_iter()
-            .map(|b| Blob {
-                index: b.index as u32,
-                blob: b.blob,
-                kzg_commitment: b.kzg_commitment,
-                kzg_proof: b.kzg_proof,
-                kzg_commitment_inclusion_proof: b.kzg_commitment_inclusion_proof,
-            })
-            .collect(),
-        Fusaka(body) => body
-            .embedded_blobs
-            .into_iter()
-            .map(|b| Blob {
-                index: b.index as u32,
-                blob: b.blob,
-                kzg_commitment: b.kzg_commitment,
-                kzg_proof: b.kzg_proof,
-                kzg_commitment_inclusion_proof: b.kzg_commitment_inclusion_proof,
-            })
-            .collect(),
+    let embedded_blobs = match blk.body {
+        Some(Deneb(body)) => body.embedded_blobs,
+        Some(Electra(body)) | Some(Fusaka(body)) => body.embedded_blobs,
+        // Gloas (ePBS): blobs are only embedded when the payload envelope is canonical,
+        // and come without KZG proofs or inclusion proofs
+        Some(Gloas(body)) => body.embedded_blobs,
         _ => vec![],
     };
+    let blobs = embedded_blobs
+        .into_iter()
+        .map(|b| Blob {
+            index: b.index as u32,
+            blob: b.blob,
+            kzg_commitment: b.kzg_commitment,
+            kzg_proof: b.kzg_proof,
+            kzg_commitment_inclusion_proof: b.kzg_commitment_inclusion_proof,
+        })
+        .collect();
 
     Ok(Slot {
         slot: blk.slot,
@@ -94,7 +76,7 @@ fn graph_out(slot: Slot) -> Result<EntityChanges, substreams::errors::Error> {
     let mut tables = Tables::new();
 
     let timestamp = slot.timestamp.unwrap_or_default().to_string();
-    let spec = Spec::try_from(slot.spec).unwrap().as_str_name();
+    let spec = Spec::try_from(slot.spec).unwrap_or_default().as_str_name();
 
     tables
         .create_row("Slot", format!("{}", slot.slot))
