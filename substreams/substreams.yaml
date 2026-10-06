@@ -59,4 +59,4 @@ sink:
   type: sf.substreams.sink.kv.v1.GenericService
   config:
 
-network: eth-cl
+network: mainnet-cl
