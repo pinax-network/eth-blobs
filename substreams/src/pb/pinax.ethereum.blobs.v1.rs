@@ -49,6 +49,7 @@ pub enum Spec {
     Deneb = 5,
     Electra = 6,
     Fusaka = 7,
+    Gloas = 8,
 }
 impl Spec {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -65,6 +66,7 @@ impl Spec {
             Spec::Deneb => "DENEB",
             Spec::Electra => "ELECTRA",
             Spec::Fusaka => "FUSAKA",
+            Spec::Gloas => "GLOAS",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -78,6 +80,7 @@ impl Spec {
             "DENEB" => Some(Self::Deneb),
             "ELECTRA" => Some(Self::Electra),
             "FUSAKA" => Some(Self::Fusaka),
+            "GLOAS" => Some(Self::Gloas),
             _ => None,
         }
     }

@@ -25,7 +25,7 @@ pub struct Block {
     pub signature: ::prost::alloc::vec::Vec<u8>,
     #[prost(message, optional, tag="31")]
     pub timestamp: ::core::option::Option<::prost_types::Timestamp>,
-    #[prost(oneof="block::Body", tags="20, 21, 22, 23, 24, 25, 26")]
+    #[prost(oneof="block::Body", tags="20, 21, 22, 23, 24, 25, 26, 27")]
     pub body: ::core::option::Option<block::Body>,
 }
 /// Nested message and enum types in `Block`.
@@ -47,6 +47,8 @@ pub mod block {
         Electra(super::ElectraBody),
         #[prost(message, tag="26")]
         Fusaka(super::ElectraBody),
+        #[prost(message, tag="27")]
+        Gloas(super::GloasBody),
     }
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -198,6 +200,49 @@ pub struct ElectraBody {
     pub blob_kzg_commitments: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
     #[prost(message, optional, tag="13")]
     pub execution_requests: ::core::option::Option<ExecutionRequest>,
+    #[prost(message, repeated, tag="20")]
+    pub embedded_blobs: ::prost::alloc::vec::Vec<Blob>,
+}
+/// GloasBody is the beacon block body from the Gloas spec onwards (EIP-7732, enshrined proposer-builder separation).
+/// The block no longer carries the execution payload itself, only the builder's signed bid for it. The builder reveals
+/// the payload separately in a signed execution payload envelope.
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GloasBody {
+    #[prost(bytes="vec", tag="1")]
+    pub rando_reveal: ::prost::alloc::vec::Vec<u8>,
+    #[prost(message, optional, tag="2")]
+    pub eth1_data: ::core::option::Option<Eth1Data>,
+    #[prost(bytes="vec", tag="3")]
+    pub graffiti: ::prost::alloc::vec::Vec<u8>,
+    #[prost(message, repeated, tag="4")]
+    pub proposer_slashings: ::prost::alloc::vec::Vec<ProposerSlashing>,
+    #[prost(message, repeated, tag="5")]
+    pub attester_slashings: ::prost::alloc::vec::Vec<AttesterSlashing>,
+    #[prost(message, repeated, tag="6")]
+    pub attestations: ::prost::alloc::vec::Vec<ElectraAttestation>,
+    #[prost(message, repeated, tag="7")]
+    pub deposits: ::prost::alloc::vec::Vec<Deposit>,
+    #[prost(message, repeated, tag="8")]
+    pub voluntary_exits: ::prost::alloc::vec::Vec<SignedVoluntaryExit>,
+    #[prost(message, optional, tag="9")]
+    pub sync_aggregate: ::core::option::Option<SyncAggregate>,
+    #[prost(message, repeated, tag="11")]
+    pub bls_to_execution_changes: ::prost::alloc::vec::Vec<SignedBlsToExecutionChange>,
+    #[prost(message, optional, tag="14")]
+    pub signed_execution_payload_bid: ::core::option::Option<SignedExecutionPayloadBid>,
+    #[prost(message, repeated, tag="15")]
+    pub payload_attestations: ::prost::alloc::vec::Vec<PayloadAttestation>,
+    /// execution requests of the parent block's payload, processed in this block
+    #[prost(message, optional, tag="16")]
+    pub parent_execution_requests: ::core::option::Option<ExecutionRequest>,
+    /// The execution payload envelope the builder revealed for this block. It is only set when the canonical chain
+    /// built on the payload, which is decided by the next canonical block's bid. It is unset when the builder withheld
+    /// the payload or the chain built on the empty slot instead.
+    #[prost(message, optional, tag="17")]
+    pub execution_payload_envelope: ::core::option::Option<SignedExecutionPayloadEnvelope>,
+    /// Blobs are only embedded when execution_payload_envelope is set. The KZG proofs and inclusion proofs are not
+    /// available from the beacon node's blobs endpoint and are left empty.
     #[prost(message, repeated, tag="20")]
     pub embedded_blobs: ::prost::alloc::vec::Vec<Blob>,
 }
@@ -504,6 +549,11 @@ pub struct ExecutionRequest {
     pub withdrawals: ::prost::alloc::vec::Vec<WithdrawalRequest>,
     #[prost(message, repeated, tag="3")]
     pub consolidations: ::prost::alloc::vec::Vec<ConsolidationRequest>,
+    /// Gloas onwards
+    #[prost(message, repeated, tag="4")]
+    pub builder_deposits: ::prost::alloc::vec::Vec<BuilderDepositRequest>,
+    #[prost(message, repeated, tag="5")]
+    pub builder_exits: ::prost::alloc::vec::Vec<BuilderExitRequest>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -539,6 +589,150 @@ pub struct ConsolidationRequest {
     #[prost(bytes="vec", tag="3")]
     pub target_pub_key: ::prost::alloc::vec::Vec<u8>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BuilderDepositRequest {
+    #[prost(bytes="vec", tag="1")]
+    pub pub_key: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="2")]
+    pub withdrawal_credentials: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag="3")]
+    pub amount: u64,
+    #[prost(bytes="vec", tag="4")]
+    pub signature: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BuilderExitRequest {
+    #[prost(bytes="vec", tag="1")]
+    pub source_address: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="2")]
+    pub pub_key: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SignedExecutionPayloadBid {
+    #[prost(message, optional, tag="1")]
+    pub message: ::core::option::Option<ExecutionPayloadBid>,
+    #[prost(bytes="vec", tag="2")]
+    pub signature: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExecutionPayloadBid {
+    #[prost(bytes="vec", tag="1")]
+    pub parent_block_hash: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="2")]
+    pub parent_block_root: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="3")]
+    pub block_hash: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="4")]
+    pub prev_randao: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="5")]
+    pub fee_recipient: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag="6")]
+    pub gas_limit: u64,
+    #[prost(uint64, tag="7")]
+    pub builder_index: u64,
+    #[prost(uint64, tag="8")]
+    pub slot: u64,
+    #[prost(uint64, tag="9")]
+    pub value: u64,
+    #[prost(uint64, tag="10")]
+    pub execution_payment: u64,
+    #[prost(bytes="vec", repeated, tag="11")]
+    pub blob_kzg_commitments: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
+    #[prost(bytes="vec", tag="12")]
+    pub execution_requests_root: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PayloadAttestation {
+    #[prost(bytes="vec", tag="1")]
+    pub aggregation_bits: ::prost::alloc::vec::Vec<u8>,
+    #[prost(message, optional, tag="2")]
+    pub data: ::core::option::Option<PayloadAttestationData>,
+    #[prost(bytes="vec", tag="3")]
+    pub signature: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PayloadAttestationData {
+    #[prost(bytes="vec", tag="1")]
+    pub beacon_block_root: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag="2")]
+    pub slot: u64,
+    #[prost(bool, tag="3")]
+    pub payload_present: bool,
+    #[prost(bool, tag="4")]
+    pub blob_data_available: bool,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SignedExecutionPayloadEnvelope {
+    #[prost(message, optional, tag="1")]
+    pub message: ::core::option::Option<ExecutionPayloadEnvelope>,
+    #[prost(bytes="vec", tag="2")]
+    pub signature: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ExecutionPayloadEnvelope {
+    #[prost(message, optional, tag="1")]
+    pub payload: ::core::option::Option<GloasExecutionPayload>,
+    #[prost(message, optional, tag="2")]
+    pub execution_requests: ::core::option::Option<ExecutionRequest>,
+    #[prost(uint64, tag="3")]
+    pub builder_index: u64,
+    #[prost(bytes="vec", tag="4")]
+    pub beacon_block_root: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="5")]
+    pub parent_beacon_block_root: ::prost::alloc::vec::Vec<u8>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GloasExecutionPayload {
+    #[prost(bytes="vec", tag="1")]
+    pub parent_hash: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="2")]
+    pub fee_recipient: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="3")]
+    pub state_root: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="4")]
+    pub receipts_root: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="5")]
+    pub logs_bloom: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="6")]
+    pub prev_randao: ::prost::alloc::vec::Vec<u8>,
+    #[prost(uint64, tag="7")]
+    pub block_number: u64,
+    #[prost(uint64, tag="8")]
+    pub gas_limit: u64,
+    #[prost(uint64, tag="9")]
+    pub gas_used: u64,
+    #[prost(message, optional, tag="10")]
+    pub timestamp: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(bytes="vec", tag="11")]
+    pub extra_data: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="12")]
+    pub base_fee_per_gas: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", tag="13")]
+    pub block_hash: ::prost::alloc::vec::Vec<u8>,
+    #[prost(bytes="vec", repeated, tag="14")]
+    pub transactions: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
+    #[prost(message, repeated, tag="15")]
+    pub withdrawals: ::prost::alloc::vec::Vec<Withdrawal>,
+    #[prost(uint64, tag="16")]
+    pub blob_gas_used: u64,
+    #[prost(uint64, tag="17")]
+    pub excess_blob_gas: u64,
+    /// RLP-encoded block access list (EIP-7928)
+    #[prost(bytes="vec", tag="18")]
+    pub block_access_list: ::prost::alloc::vec::Vec<u8>,
+    /// EIP-7843
+    #[prost(uint64, tag="19")]
+    pub slot_number: u64,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum Spec {
@@ -550,6 +744,7 @@ pub enum Spec {
     Deneb = 5,
     Electra = 6,
     Fusaka = 7,
+    Gloas = 8,
 }
 impl Spec {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -566,6 +761,7 @@ impl Spec {
             Spec::Deneb => "DENEB",
             Spec::Electra => "ELECTRA",
             Spec::Fusaka => "FUSAKA",
+            Spec::Gloas => "GLOAS",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -579,6 +775,7 @@ impl Spec {
             "DENEB" => Some(Self::Deneb),
             "ELECTRA" => Some(Self::Electra),
             "FUSAKA" => Some(Self::Fusaka),
+            "GLOAS" => Some(Self::Gloas),
             _ => None,
         }
     }

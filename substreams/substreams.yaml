@@ -1,7 +1,7 @@
 specVersion: v0.1.0
 package:
   name: "eth_blobs"
-  version: v0.8.0
+  version: v0.10.0
   image: ./logo.png
   url: https://github.com/pinax-network/eth-blobs
   description: |
@@ -16,7 +16,7 @@ package:
     - chiado-cl: chiado-cl.substreams.pinax.network:443
 
 imports:
-  beacon: https://github.com/pinax-network/firehose-beacon/releases/download/v0.7.1/beacon-v0.7.0.spkg
+  beacon: https://github.com/pinax-network/firehose-beacon/releases/download/v0.8.0/beacon-v0.8.0.spkg
   entity: https://github.com/streamingfast/substreams-sink-entity-changes/releases/download/v2.0.0/substreams-entity-change-v2.0.0.spkg
 
 protobuf:
@@ -59,4 +59,4 @@ sink:
   type: sf.substreams.sink.kv.v1.GenericService
   config:
 
-network: beacon
+network: mainnet-cl

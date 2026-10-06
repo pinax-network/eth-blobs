@@ -15,6 +15,7 @@ enum Spec {
   DENEB = 5;
   ELECTRA = 6;
   FUSAKA = 7;
+  GLOAS = 8;
 }
 
 message Slot {

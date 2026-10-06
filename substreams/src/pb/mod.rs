@@ -20,6 +20,13 @@ pub mod sf {
             }
         }
     }
+    pub mod firehose {
+        // @@protoc_insertion_point(attribute:sf.firehose.v2)
+        pub mod v2 {
+            include!("sf.firehose.v2.rs");
+            // @@protoc_insertion_point(sf.firehose.v2)
+        }
+    }
     pub mod substreams {
         pub mod sink {
             pub mod kv {
