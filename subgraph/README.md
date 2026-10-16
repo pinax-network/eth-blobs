@@ -12,9 +12,9 @@
 
 - Build, create and deploy the subgraph
 ```bash
-> yarn build
-> yarn create-local
-> yarn deploy-local
+> bun run build
+> bun run create-local
+> bun run deploy-local
 ```
 
 - Query: http://localhost:8000/subgraphs/name/blobs/graphql
