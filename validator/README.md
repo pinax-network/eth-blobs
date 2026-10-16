@@ -188,7 +188,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd validator
-          bun install
+          bun install --frozen-lockfile
 
       - name: Validate last 100 blocks (EL)
         run: |
