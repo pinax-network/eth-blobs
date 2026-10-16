@@ -15,5 +15,15 @@
     "@types/node": "^20.11.19",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3"
+  },
+  "packageManager": "bun@1.4.3",
+  "engines": {
+    "bun": ">=1.4.3"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "bun",
+      "onFail": "error"
+    }
   }
 }
