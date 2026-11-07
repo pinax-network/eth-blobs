@@ -66,6 +66,10 @@ func NewS3(ctx context.Context, cfg S3Config) (*S3Store, error) {
 			o.BaseEndpoint = aws.String(cfg.Endpoint)
 		}
 		o.UsePathStyle = cfg.PathStyle
+		// Ceph RGW and MinIO do not return the integrity checksums the SDK adds by default;
+		// without this every GET logs "Response has no supported checksum".
+		o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
+		o.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
 	})
 	timeout := cfg.Timeout
 	if timeout <= 0 {
