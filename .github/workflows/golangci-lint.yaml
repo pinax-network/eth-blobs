@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.25.x ]
+        go-version: [ 1.26.x ]
         os: [ ubuntu-latest ]
     name: lint
     steps:
@@ -32,7 +32,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Format
-        run: cd api-service && task test:format
+        run: cd blobs && task test:format
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v7
@@ -40,7 +40,7 @@ jobs:
           # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
           version: v2.11.4
           # Optional: working directory, useful when you have multiple Go modules
-          working-directory: api-service
+          working-directory: blobs
           # Optional: golangci-lint command line arguments.
           args: --timeout=5m
           # Optional: show only new issues if it's a pull request. The default value is `false`.

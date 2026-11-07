@@ -1,0 +1,81 @@
+# blobs
+
+One Go binary with three jobs:
+
+| Command | What it does |
+|---|---|
+| `blobs api` | Serves the Beacon-compatible blob endpoints from the store |
+| `blobs sink` | Streams the eth-blobs Substreams (`map_blobs`) into the store |
+| `blobs migrate-kv` | Copies slots out of a `substreams-sink-kv serve` endpoint into the store |
+
+The store is any S3-compatible bucket (Ceph RGW, MinIO, AWS, R2). Credentials come from the
+standard AWS environment (`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` or a profile), never from
+a config file.
+
+## Object layout
+
+```
+slots/<slot>.pb     serialized pinax.ethereum.blobs.v1.Slot, one per beacon block (also for blocks without blobs)
+roots/0x<root>      decimal slot number of the block with that root
+head/<writer>       JSON {slot, root, timestamp, writer}: the newest slot <writer> has fully written
+cursor/<writer>     the writer's opaque Substreams cursor
+```
+
+Several sinks (one per DC) may write the same bucket as long as each has its own `--writer`:
+slot and root objects are identical for a given block, so overwrites are harmless, and head and
+cursor are per writer. The API takes the highest head across writers. A slot fetched through a
+block root must still carry that root, so a root index entry left behind by a reorg resolves to
+`404`. The `--s3-prefix` flag (or `store.prefix` in the API config) lets several chains share a bucket.
+
+## Build and test
+
+```bash
+task build            # ./blobs
+task test             # go test ./...
+task generate:go      # regenerate swagger docs from the api annotations
+task protogen         # regenerate Go protobuf bindings from ../proto
+```
+
+The store test runs against an in-process fake S3 by default; set `BLOBS_S3_TEST_ENDPOINT` (and
+AWS credentials) to run it against a real RGW or MinIO.
+
+## Run
+
+```bash
+# API
+cp config.example.yaml config.yaml   # point store.endpoint / store.bucket at the sink's bucket
+AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... ./blobs api --config config.yaml
+curl -s localhost:8080/health
+curl -s localhost:8080/eth/v1/beacon/blob_sidecars/head | head -c 300
+
+# Sink, following the chain from the last 100 slots (plaintext for in-mesh tier1)
+./blobs sink eth-cl.substreams.riv-prod-firehose-a.pinax.io:80 \
+    https://github.com/pinax-network/eth-blobs/releases/download/v0.10.0/eth-blobs-v0.10.0.spkg -100: \
+    --plaintext --undo-buffer-size=1 --writer=riv \
+    --s3-endpoint=http://rgw.internal --s3-bucket=blobs-eth --metrics-listen-addr=:9102
+
+# One-off migration out of the existing KV store, then start the sink from <to>+1
+./blobs migrate-kv blobs-serve:8000 8626176: --workers=32 --writer=migration \
+    --s3-endpoint=http://rgw.internal --s3-bucket=blobs-eth
+```
+
+Sink behaviour worth knowing:
+
+- While catching up, blocks are written in batches of `--batch-size` with `--parallelism`
+  concurrent object writes; at the head every block is written as it arrives. Each flush writes
+  slots and roots, then the head, then the cursor, so a reader never sees a head or cursor ahead
+  of the data.
+- `--undo-buffer-size=1` delays blocks by one slot so undo signals are rare. When one arrives,
+  slot objects above the last valid block are deleted (at least `--cleanup-window` of them), the
+  head is republished at the last valid block and the cursor advances.
+- On startup, slot objects within `--cleanup-window` above the cursor are deleted, in case a crash
+  landed between the slot writes of a flush and its cursor write and a reorg has since emptied
+  one of those slots.
+- A failed batch write is retried `--flush-retries` times with backoff before the sink exits;
+  every write is idempotent so a retry is always safe.
+
+Metrics: the substreams-sink library's `head_block_number`, `head_block_time_drift` and
+`substreams_sink_*`, plus `blobs_sink_slots_written`, `blobs_sink_blobs_written`,
+`blobs_sink_bytes_written`, `blobs_sink_flush`, `blobs_sink_last_flush_duration_seconds`,
+`blobs_sink_undo`, `blobs_sink_slots_deleted` and `blobs_sink_head_slot`. The API exposes gin
+request metrics on `/metrics`.

@@ -3,7 +3,7 @@ name: Build & Push Docker Image
 on:
   push:
     paths:
-      - "api-service/**"
+      - "blobs/**"
       - "proto/**"
     branches:
       - "main"
@@ -21,7 +21,7 @@ jobs:
 
     strategy:
       matrix:
-        go-version: [ 1.25.x ]
+        go-version: [ 1.26.x ]
 
     steps:
       - name: Checkout repository
@@ -48,5 +48,5 @@ jobs:
 
       - name: Build & Push Docker Image
         run: |
-          cd api-service
+          cd blobs
           task build:docker
