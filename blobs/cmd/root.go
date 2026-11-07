@@ -88,7 +88,7 @@ func operatorPreRun(cmd *cobra.Command, _ []string) error {
 }
 
 func addStoreFlags(fs *pflag.FlagSet) {
-	fs.String("s3-endpoint", "", "S3 endpoint URL, e.g. http://rook-ceph-rgw.rook-ceph.svc (empty means AWS)")
+	fs.String("s3-endpoint", "", "S3 endpoint URL, e.g. http://localhost:9000 (empty means AWS)")
 	fs.String("s3-bucket", "", "Bucket holding the blobs objects (required)")
 	fs.String("s3-prefix", "", "Key prefix inside the bucket, e.g. eth/ when several chains share one bucket")
 	fs.String("s3-region", "", "Region to sign requests for (default us-east-1, which is what Ceph RGW and MinIO expect)")

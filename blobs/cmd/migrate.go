@@ -24,7 +24,7 @@ right away; start the live sink afterwards with a start block of <to>+1.`,
 	Args:    cobra.RangeArgs(1, 2),
 	PreRunE: operatorPreRun,
 	Example: `  blobs migrate-kv blobs-serve:8000 8626176: --workers=32 --writer=migration \
-      --s3-endpoint=http://rgw.internal --s3-bucket=blobs-eth`,
+      --s3-endpoint=http://localhost:9000 --s3-bucket=blobs-eth`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		cfg := migrate.Config{

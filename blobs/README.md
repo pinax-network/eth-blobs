@@ -48,15 +48,15 @@ AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... ./blobs api --config config.yaml
 curl -s localhost:8080/health
 curl -s localhost:8080/eth/v1/beacon/blob_sidecars/head | head -c 300
 
-# Sink, following the chain from the last 100 slots (plaintext for in-mesh tier1)
-./blobs sink eth-cl.substreams.riv-prod-firehose-a.pinax.io:80 \
+# Sink, following the chain from the last 100 slots (SUBSTREAMS_API_KEY for the public endpoint)
+./blobs sink eth-cl.substreams.pinax.network:443 \
     https://github.com/pinax-network/eth-blobs/releases/download/v0.10.0/eth-blobs-v0.10.0.spkg -100: \
-    --plaintext --undo-buffer-size=1 --writer=riv \
-    --s3-endpoint=http://rgw.internal --s3-bucket=blobs-eth --metrics-listen-addr=:9102
+    --undo-buffer-size=1 --writer=dc1 \
+    --s3-endpoint=http://localhost:9000 --s3-bucket=blobs-eth --metrics-listen-addr=:9102
 
 # One-off migration out of the existing KV store, then start the sink from <to>+1
 ./blobs migrate-kv blobs-serve:8000 8626176: --workers=32 --writer=migration \
-    --s3-endpoint=http://rgw.internal --s3-bucket=blobs-eth
+    --s3-endpoint=http://localhost:9000 --s3-bucket=blobs-eth
 ```
 
 Sink behaviour worth knowing:
@@ -65,7 +65,7 @@ Sink behaviour worth knowing:
   concurrent object writes; at the head every block is written as it arrives. Each flush writes
   slots and roots, then the head, then the cursor, so a reader never sees a head or cursor ahead
   of the data.
-- `--undo-buffer-size=1` delays blocks by one slot so undo signals are rare. When one arrives,
+- `--undo-buffer-size=1` delays blocks by one slot so undo signals are rare (the library default is 12). When one arrives,
   slot objects above the last valid block are deleted (at least `--cleanup-window` of them), the
   head is republished at the last valid block and the cursor advances.
 - On startup, slot objects within `--cleanup-window` above the cursor are deleted, in case a crash

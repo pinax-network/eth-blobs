@@ -7,8 +7,8 @@ file, this file wins.
 Ethereum consensus-layer blobs (EIP-4844) as a service: a Substreams package extracts every
 beacon block's blobs, a sink writes them to an S3-compatible bucket, and a Beacon-compatible
 REST API serves them as a drop-in replacement for a consensus client's blob endpoints, with
-history far beyond the 18 days a beacon node keeps. Deployment lives in
-[`k8s-blobs`](https://github.com/pinax-network/k8s-blobs).
+history far beyond the 18 days a beacon node keeps. Pinax runs it as `<chain>.blobs.pinax.network`;
+the deployment manifests live in a private repository and are out of scope here.
 
 ## Discovery paths
 
@@ -115,15 +115,15 @@ credentials in the environment. For a full local run, start any S3 (MinIO, or go
 `store/s3_test.go`), create a bucket, and stream a short range from the public endpoint:
 
 ```bash
-SUBSTREAMS_API_KEY=$PINAX_KEY AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... \
+SUBSTREAMS_API_KEY=<your key> AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... \
   ./blobs sink eth-cl.substreams.pinax.network:443 ../substreams/eth-blobs-v0.10.0.spkg 15600000:15600020 \
   --writer dev --batch-size 5 --s3-endpoint http://localhost:9000 --s3-bucket blobs-eth
 ./blobs api --config config.yaml      # store section pointing at the same bucket
 curl localhost:8080/eth/v1/beacon/blob_sidecars/15600010
 ```
 
-In-mesh tier1 endpoints (`<chain>-cl.substreams.<zone>-prod-firehose-a.pinax.io:80`) need
-`--plaintext` and no key; the public ones need `SUBSTREAMS_API_KEY`.
+Public Substreams endpoints need `SUBSTREAMS_API_KEY`; a self-hosted plaintext endpoint needs
+`--plaintext` instead.
 
 ## CI, images, releases
 
@@ -135,7 +135,7 @@ In-mesh tier1 endpoints (`<chain>-cl.substreams.<zone>-prod-firehose-a.pinax.io:
 
 Image tags: a `v*` git tag yields `eth-blobs:vX.Y.Z` **and moves `latest`**; any other build is
 tagged with the short commit. For a trial build of a branch use `gh workflow run docker.yml
---ref <branch>` and pin the resulting short-commit tag in k8s-blobs. Releasing is tagging `main`
+--ref <branch>` and deploy the resulting short-commit tag. Releasing is tagging `main`
 with `v*`; the Substreams package has its own release line (`eth-blobs-vX.Y.Z.spkg` on GitHub
 releases), bumped only when the Rust modules change.
 
@@ -156,8 +156,6 @@ historical slots after any backfill and on the most recent few hundred after any
 
 | Repo | Owns |
 |---|---|
-| `k8s-blobs` | the deployment: sink and api tiers, buckets, alerts, dashboards, cutover runbook |
-| `k8s-pinax-fleet` | which clusters run the blobs tenant and from which branch |
-| `firehose-beacon` | the beacon Firehose and the `beacon` Substreams import |
-| `opstrom` | the monitoring agent; components `blobs_inject` (the write path) and `blobs_api` |
-| `opstrom-viz` | `topology/blobs.yaml`, the drawn topology of this stack |
+| [`firehose-beacon`](https://github.com/pinax-network/firehose-beacon) | the beacon Firehose and the `beacon` Substreams import |
+| [`substreams`](https://github.com/streamingfast/substreams) | the Substreams engine and CLI |
+| [`substreams-sink-kv`](https://github.com/streamingfast/substreams-sink-kv) | the legacy KV sink `migrate-kv` reads from |

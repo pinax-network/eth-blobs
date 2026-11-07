@@ -20,7 +20,7 @@ var sinkCmd = &cobra.Command{
 	Long: `Streams map_blobs from a Substreams endpoint and writes one object per beacon block to the
 store, plus the block-root index and this writer's head and cursor objects.
 
-  <endpoint>      Substreams tier1, e.g. eth-cl.substreams.riv-prod-firehose-a.pinax.io:80 (use --plaintext)
+  <endpoint>      Substreams endpoint, e.g. eth-cl.substreams.pinax.network:443 (or a plaintext one with --plaintext)
   <manifest>      URL or path of the eth-blobs .spkg
   <start>:<stop>  Optional block range; omit to follow the chain. Negative start is relative to head.
 
@@ -30,10 +30,10 @@ Authentication uses SUBSTREAMS_API_TOKEN when the endpoint needs it.`,
 	Args:    cobra.RangeArgs(2, 3),
 	PreRunE: operatorPreRun,
 	RunE:    runSink,
-	Example: `  blobs sink eth-cl.substreams.riv-prod-firehose-a.pinax.io:80 \
+	Example: `  blobs sink eth-cl.substreams.pinax.network:443 \
       https://github.com/pinax-network/eth-blobs/releases/download/v0.10.0/eth-blobs-v0.10.0.spkg \
-      --plaintext --undo-buffer-size=1 --writer=riv \
-      --s3-endpoint=http://rgw.internal --s3-bucket=blobs-eth --metrics-listen-addr=:9102`,
+      --undo-buffer-size=1 --writer=dc1 \
+      --s3-endpoint=http://localhost:9000 --s3-bucket=blobs-eth --metrics-listen-addr=:9102`,
 }
 
 func init() {
