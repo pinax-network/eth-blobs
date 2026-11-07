@@ -106,8 +106,9 @@ tasks:
     deps:
       - build
     cmds:
-      - ./{{.BINARY}} sink {{.ENDPOINT}} ../substreams/eth-blobs-v0.10.0.spkg -100:
-        --writer dev --s3-endpoint {{.S3_ENDPOINT}} --s3-bucket {{.S3_BUCKET}} --metrics-listen-addr :9102 {{.CLI_ARGS}}
+      - |
+        ./{{.BINARY}} sink {{.ENDPOINT}} ../substreams/eth-blobs-v0.10.0.spkg -100: \
+          --writer dev --s3-endpoint {{.S3_ENDPOINT}} --s3-bucket {{.S3_BUCKET}} --metrics-listen-addr :9102 {{.CLI_ARGS}}
     vars:
       ENDPOINT: '{{.ENDPOINT | default "eth-cl.substreams.pinax.network:443"}}'
       S3_ENDPOINT: '{{.S3_ENDPOINT | default "http://localhost:9000"}}'
