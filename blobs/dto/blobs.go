@@ -53,8 +53,16 @@ type Message struct {
 
 type HexBytes []byte
 
+// MarshalJSON writes "0x<hex>" straight into one buffer. Hex digits never need
+// JSON escaping, so building the string first and passing it through
+// json.Marshal only adds copies: for a 128 KiB blob that was ~4 extra 256 KiB
+// allocations per blob, which dominated the API's CPU and GC time.
 func (h HexBytes) MarshalJSON() ([]byte, error) {
-	return json.Marshal("0x" + hex.EncodeToString(h))
+	out := make([]byte, 4+hex.EncodedLen(len(h)))
+	out[0], out[1], out[2] = '"', '0', 'x'
+	hex.Encode(out[3:], h)
+	out[len(out)-1] = '"'
+	return out, nil
 }
 
 type StrU64 uint64
