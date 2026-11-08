@@ -36,14 +36,18 @@ type Config struct {
 	// so the API can serve before the live sink takes over.
 	Writer string
 	// Overwrite rewrites slots that already exist in the store. By default
-	// existing slots are skipped so an interrupted run can simply be rerun.
+	// existing slots are not copied again (their root index is still checked
+	// and repaired) so an interrupted run can simply be rerun.
 	Overwrite bool
 	Retries   int
 }
 
 type Report struct {
-	Copied    uint64
-	Skipped   uint64
+	Copied  uint64
+	Skipped uint64
+	// Repaired counts skipped slots whose root index was missing or wrong
+	// (a previous run stopped between the slot write and the root write).
+	Repaired  uint64
 	Missing   uint64
 	Bytes     uint64
 	Blobs     uint64
@@ -55,7 +59,8 @@ type Report struct {
 }
 
 // Run copies the configured slot range. It is safe to rerun on the same
-// range: the writes are idempotent and existing slots are skipped.
+// range: the writes are idempotent, existing slots are not copied again but
+// have their root index repaired, and they count towards the published head.
 func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*Report, error) {
 	if cfg.Workers <= 0 {
 		cfg.Workers = 16
@@ -88,8 +93,8 @@ func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*
 
 	report := &Report{StartedAt: time.Now()}
 	var (
-		copied, skipped, missing, bytes, blobs atomic.Uint64
-		mu                                     sync.Mutex
+		copied, skipped, repaired, missing, bytes, blobs atomic.Uint64
+		mu                                               sync.Mutex
 	)
 	noteHigh := func(slot uint64, root string, ts int64) {
 		mu.Lock()
@@ -143,10 +148,19 @@ func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*
 		g.Go(func() error {
 			for slot := range slots {
 				if !cfg.Overwrite {
-					if _, err := st.GetSlot(gctx, slot); err == nil {
+					existing, err := st.GetSlot(gctx, slot)
+					if err == nil {
+						fixed, err := ensureIndexed(gctx, st, slot, existing, cfg.Retries, logger, noteHigh)
+						if err != nil {
+							return err
+						}
+						if fixed {
+							repaired.Add(1)
+						}
 						skipped.Add(1)
 						continue
-					} else if !errors.Is(err, store.ErrNotFound) {
+					}
+					if !errors.Is(err, store.ErrNotFound) {
 						return fmt.Errorf("checking slot %d: %w", slot, err)
 					}
 				}
@@ -191,7 +205,7 @@ func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*
 		return nil, err
 	}
 
-	report.Copied, report.Skipped, report.Missing = copied.Load(), skipped.Load(), missing.Load()
+	report.Copied, report.Skipped, report.Repaired, report.Missing = copied.Load(), skipped.Load(), repaired.Load(), missing.Load()
 	report.Bytes, report.Blobs = bytes.Load(), blobs.Load()
 	report.Duration = time.Since(report.StartedAt)
 
@@ -203,6 +217,39 @@ func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*
 		logger.Info("published head", zap.String("writer", cfg.Writer), zap.Uint64("slot", head.Slot))
 	}
 	return report, nil
+}
+
+// ensureIndexed checks a slot already in the store: its root object must point
+// back at it, which a run interrupted between the slot write and the root
+// write would have left missing. It reports whether the root was rewritten and
+// records the slot for the head either way.
+func ensureIndexed(ctx context.Context, st store.Store, slot uint64, data []byte, retries int, logger *zap.Logger, noteHigh func(uint64, string, int64)) (bool, error) {
+	pb := &pbbl.Slot{}
+	if err := proto.Unmarshal(data, pb); err != nil {
+		return false, fmt.Errorf("existing slot %d: unmarshal: %w", slot, err)
+	}
+	if pb.Slot != slot {
+		return false, fmt.Errorf("existing slot object %d carries slot %d", slot, pb.Slot)
+	}
+	root := store.RootHex(pb.Root)
+	fixed := false
+	indexed, err := st.GetRoot(ctx, root)
+	switch {
+	case err == nil && indexed == slot:
+	case err == nil || errors.Is(err, store.ErrNotFound):
+		if err := retry(ctx, retries, logger, func() error { return st.PutRoot(ctx, root, slot) }); err != nil {
+			return false, fmt.Errorf("repairing root of slot %d: %w", slot, err)
+		}
+		fixed = true
+	default:
+		return false, fmt.Errorf("checking root of slot %d: %w", slot, err)
+	}
+	var ts int64
+	if pb.Timestamp != nil {
+		ts = pb.Timestamp.AsTime().Unix()
+	}
+	noteHigh(slot, root, ts)
+	return fixed, nil
 }
 
 func kvHead(ctx context.Context, kv pbkv.KvClient) (uint64, error) {

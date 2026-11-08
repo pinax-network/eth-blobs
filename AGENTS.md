@@ -70,32 +70,45 @@ These rules are what make the design safe; do not weaken them:
    transforming and why writers can overwrite each other harmlessly. The API decodes it.
 2. **Every beacon block gets a slot object, blobs or not.** Beacon API semantics: `200` with an
    empty list for a block without blobs, `404` only for an unknown block.
-3. **Write order within a flush is slots and roots, then head, then cursor.** A reader must never
-   see a head or cursor that is ahead of the data.
+3. **Write order within a flush is slots, roots and missed-slot deletes, then head, then the
+   cursor of the last block in the flush.** A reader must never see a head or cursor that is
+   ahead of the data, and a cursor never moves past a delete that has not happened.
 4. **Several writers may share a bucket; each has a unique `--writer`.** Slot and root objects
    are deterministic per block; head and cursor are per writer. The API takes the highest head
    across writers. Two writers with the same id corrupt each other's cursor.
 5. **`START_BLOCK` applies only when the writer has no cursor object.** With a cursor the sink
    resumes from it, whatever the block range says. Deleting `cursor/<writer>` is how you restart a
    writer from the range.
-6. **Undo:** the sink runs with `--undo-buffer-size=1` in production (one slot of delay; the
-   library default is 12), so undo signals only come from deeper reorgs. On undo it drops pending
-   blocks above the last valid one, deletes slot objects above it (at least `--cleanup-window`
-   of them), republishes the head at the last valid block and advances the cursor. Root objects
-   are left in place: the API checks that a slot fetched by root still carries that root and
-   answers `404` otherwise.
-7. **Startup cleanup:** slot objects within `--cleanup-window` above the cursor are deleted, in
-   case a crash fell between the slot writes of a flush and its cursor write and a reorg has
-   since emptied one of those slots. The stream rewrites the rest.
+6. **No library undo buffer; the sink handles every undo.** `blobs sink` does not register
+   `--undo-buffer-size`. With a buffer the library swallows undo signals, a fork deeper than the
+   buffer kills the stream, and on restart the empty buffer swallows the server's undo again, so
+   orphans already written would never be cleaned up. Every block is written as it arrives.
+7. **Deletes never touch a valid block, from any writer.** Only two deletes exist:
+   - *Missed slots:* when the stream delivers block S right after block P (or after the cursor's
+     block on startup, or the last valid block of an undo), the slots in (P, S) hold no block on
+     that chain, so their objects are deleted in S's flush. This removes orphans the new chain has
+     no block for and leftovers of a crash, including those written before a restart.
+   - *Own orphans on undo:* slots this process wrote above the last valid block (it tracks its
+     non-final writes) are deleted only if they still hold the block it wrote; a slot another
+     writer already refilled with the new chain's block stays. Orphans the new chain has a block
+     for are overwritten by the stream.
+
+   On undo the sink also drops pending blocks above the last valid one, republishes its head
+   there and saves the undo's cursor. Startup deletes nothing. Root objects are left in place:
+   the API checks that a slot fetched by root still carries that root and answers `404`
+   otherwise. Between an undo and the new chain's next block, a slot query can still return an
+   orphan another writer has not cleaned yet (seconds).
 8. **A failed batch write is retried whole, then the sink exits.** Every write is idempotent.
 
 ### Library gotchas
 
 - `github.com/streamingfast/substreams-sink` is replaced by the Pinax fork
   `github.com/pinax-network/substreams-sink-go` in `go.mod`; keep the `replace`.
-- On a bounded run the library streams up to the stop block **plus the undo buffer**, so a
-  `-s A -t B` run writes slightly past B. Production runs are unbounded.
-- `migrate-kv` skips slots already in the store unless `--overwrite`, treats a KV `NotFound` as a
+- The library's range-completion callback passes the last cursor *received*; the sink ignores it
+  and saves the cursor of the last block it wrote. A bounded `A:B` run writes slots A..B-1.
+  Production runs are unbounded.
+- `migrate-kv` does not recopy slots already in the store unless `--overwrite`, but checks and
+  repairs their root object and counts them towards the head; it treats a KV `NotFound` as a
   missed slot, and publishes `head/<writer>` only when `--writer` is given. Omit `--writer` when
   backfilling below a live writer's head. KV keys are `slot:<n>` without padding, so it reads
   per key rather than scanning.

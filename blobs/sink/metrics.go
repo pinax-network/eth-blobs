@@ -16,6 +16,6 @@ var (
 	FlushCount        = metrics.NewCounter("blobs_sink_flush", "Flushes (batches of slot objects followed by a head and cursor write)")
 	LastFlushDuration = metrics.NewGauge("blobs_sink_last_flush_duration_seconds", "Wall time of the last flush")
 	UndoCount         = metrics.NewCounter("blobs_sink_undo", "Undo signals handled")
-	SlotsDeleted      = metrics.NewCounter("blobs_sink_slots_deleted", "Slot objects deleted by undo or startup cleanup")
+	SlotsDeleted      = metrics.NewCounter("blobs_sink_slots_deleted", "Slot objects deleted: missed slots the stream skipped and orphans removed on undo")
 	HeadSlot          = metrics.NewGauge("blobs_sink_head_slot", "Newest slot published as this writer's head")
 )

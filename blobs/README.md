@@ -65,7 +65,7 @@ curl -s localhost:8080/eth/v1/beacon/blob_sidecars/head | head -c 300
 # Sink, following the chain from the last 100 slots (SUBSTREAMS_API_KEY for the public endpoint)
 ./blobs sink eth-cl.substreams.pinax.network:443 \
     https://github.com/pinax-network/eth-blobs/releases/download/v0.10.0/eth-blobs-v0.10.0.spkg -100: \
-    --undo-buffer-size=1 --writer=dc1 \
+    --writer=dc1 \
     --store-url="s3://localhost:9000/blobs-eth?region=none&insecure=true" --metrics-listen-addr=:9102
 
 # One-off migration out of the existing KV store, then start the sink from <to>+1
@@ -79,12 +79,12 @@ Sink behaviour worth knowing:
   concurrent object writes; at the head every block is written as it arrives. Each flush writes
   slots and roots, then the head, then the cursor, so a reader never sees a head or cursor ahead
   of the data.
-- `--undo-buffer-size=1` delays blocks by one slot so undo signals are rare (the library default is 12). When one arrives,
-  slot objects above the last valid block are deleted (at least `--cleanup-window` of them), the
-  head is republished at the last valid block and the cursor advances.
-- On startup, slot objects within `--cleanup-window` above the cursor are deleted, in case a crash
-  landed between the slot writes of a flush and its cursor write and a reorg has since emptied
-  one of those slots.
+- Reorgs are handled by the sink, not by the library's undo buffer (there is no
+  `--undo-buffer-size`). When the stream skips slots (no block on the chain), their objects are
+  deleted in the same flush, which removes orphans and crash leftovers. On an undo the sink drops
+  pending blocks above the last valid one, deletes the orphans it wrote that still hold its block
+  (never a block another writer rewrote), republishes its head and saves the undo's cursor.
+- Startup deletes nothing, so restarting one writer never removes blocks another writer wrote.
 - A failed batch write is retried `--flush-retries` times with backoff before the sink exits;
   every write is idempotent so a retry is always safe.
 

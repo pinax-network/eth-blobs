@@ -16,11 +16,13 @@ var migrateCmd = &cobra.Command{
 	Use:   "migrate-kv <kv-serve-addr> [<from>:<to>]",
 	Short: "Copy slots from a substreams-sink-kv serve endpoint into the store",
 	Long: `Reads slot:<n> values from a running substreams-sink-kv serve gRPC endpoint and writes them
-as slot objects, byte for byte, together with the root index. Existing slots are skipped so an
-interrupted run can be rerun on the same range. <to> defaults to the KV store's head.
+as slot objects, byte for byte, together with the root index. Existing slots are not copied
+again, but their root index is checked and repaired, so an interrupted run can be rerun on the
+same range. <to> defaults to the KV store's head.
 
-With --writer the highest copied slot is published as that writer's head, so the API can serve
-right away; start the live sink afterwards with a start block of <to>+1.`,
+With --writer the highest slot of the range present in the store (copied or already there) is
+published as that writer's head, so the API can serve right away; start the live sink
+afterwards with a start block of <to>+1.`,
 	Args:    cobra.RangeArgs(1, 2),
 	PreRunE: operatorPreRun,
 	Example: `  blobs migrate-kv blobs-serve:8000 8626176: --workers=32 --writer=migration \
@@ -50,7 +52,7 @@ right away; start the live sink afterwards with a start block of <to>+1.`,
 			return err
 		}
 		zlog.Info("migration finished",
-			zap.Uint64("copied", report.Copied), zap.Uint64("skipped", report.Skipped), zap.Uint64("missing", report.Missing),
+			zap.Uint64("copied", report.Copied), zap.Uint64("skipped", report.Skipped), zap.Uint64("repaired", report.Repaired), zap.Uint64("missing", report.Missing),
 			zap.Uint64("blobs", report.Blobs), zap.Uint64("bytes", report.Bytes),
 			zap.Uint64("high_slot", report.HighSlot), zap.Duration("took", report.Duration),
 		)
