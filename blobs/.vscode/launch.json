@@ -19,7 +19,7 @@
             "cwd": "${workspaceFolder}/blobs",
             "env": {"AWS_ACCESS_KEY_ID": "minio", "AWS_SECRET_ACCESS_KEY": "minio123"},
             "args": ["sink", "eth-cl.substreams.pinax.network:443", "../substreams/eth-blobs-v0.10.0.spkg", "-100:",
-                     "--writer", "dev", "--s3-endpoint", "http://localhost:9000", "--s3-bucket", "blobs-eth",
+                     "--writer", "dev", "--store-url", "s3://localhost:9000/blobs-eth?region=none&insecure=true",
                      "--metrics-listen-addr", ":9102"]
         }
     ]

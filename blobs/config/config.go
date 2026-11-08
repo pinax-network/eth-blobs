@@ -4,8 +4,6 @@ import (
 	"time"
 
 	base_config "github.com/pinax-network/golang-base/config"
-
-	"github.com/pinax-network/blob-service/blobs/store"
 )
 
 type ChainConfig struct {
@@ -23,10 +21,15 @@ type ChainConfig struct {
 // chain.finality_lag is unset in the config.
 const DefaultFinalityLag uint64 = 64
 
-// StoreConfig is the bucket the sink writes. Credentials come from the AWS
-// environment, never from this file.
+// StoreConfig is where the sink writes. Credentials come from the backend's
+// environment (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY,
+// GOOGLE_APPLICATION_CREDENTIALS, ...), never from this file.
 type StoreConfig struct {
-	store.S3Config `yaml:",inline" mapstructure:",squash"`
+	// URL is a dstore URL, e.g. s3://host:9000/blobs-eth?region=none&insecure=true,
+	// gs://bucket/prefix or file:///var/lib/blobs. See store.Open.
+	URL string `yaml:"url" json:"url" mapstructure:"url" validate:"required"`
+	// Timeout bounds each store operation. Zero uses store.DefaultTimeout.
+	Timeout time.Duration `yaml:"timeout" json:"timeout" mapstructure:"timeout"`
 	// HeadTTL bounds how long the API reuses a fetched head before asking
 	// the store again. Zero uses DefaultHeadTTL.
 	HeadTTL time.Duration `yaml:"head_ttl" json:"head_ttl" mapstructure:"head_ttl"`

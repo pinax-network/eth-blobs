@@ -33,7 +33,7 @@ Authentication uses SUBSTREAMS_API_TOKEN when the endpoint needs it.`,
 	Example: `  blobs sink eth-cl.substreams.pinax.network:443 \
       https://github.com/pinax-network/eth-blobs/releases/download/v0.10.0/eth-blobs-v0.10.0.spkg \
       --undo-buffer-size=1 --writer=dc1 \
-      --s3-endpoint=http://localhost:9000 --s3-bucket=blobs-eth --metrics-listen-addr=:9102`,
+      --store-url="s3://localhost:9000/blobs-eth?region=none&insecure=true" --metrics-listen-addr=:9102`,
 }
 
 func init() {
@@ -73,7 +73,7 @@ func runSink(cmd *cobra.Command, args []string) error {
 	sink.RegisterMetrics()
 	blobsink.RegisterMetrics()
 
-	st, err := storeFromFlags(ctx, cmd)
+	st, err := storeFromFlags(cmd)
 	if err != nil {
 		return err
 	}

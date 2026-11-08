@@ -31,11 +31,19 @@ var rootCmd = &cobra.Command{
 	Long: `One binary with three jobs:
 
   blobs api         serve /eth/v1/beacon/blob_sidecars and /eth/v1/beacon/blobs from the store
-  blobs sink        stream the eth-blobs Substreams (map_blobs) into an S3-compatible store
+  blobs sink        stream the eth-blobs Substreams (map_blobs) into the store
   blobs migrate-kv  copy slots out of a substreams-sink-kv serve endpoint into the store
 
-The store is any S3-compatible bucket (AWS, Ceph RGW, MinIO, R2). Credentials come from the
-standard AWS environment (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY or a profile).`,
+The store is a dstore URL: an S3-compatible bucket (AWS, Ceph RGW, MinIO, R2), Google Cloud
+Storage, Azure Blob Storage or a local directory:
+
+  s3://localhost:9000/blobs-eth?region=none&insecure=true   S3-compatible endpoint
+  s3://blobs-eth?region=us-east-1                           AWS S3
+  gs://blobs-eth                                            Google Cloud Storage
+  file:///var/lib/blobs/eth                                 local directory
+
+Credentials come from each backend's standard environment (AWS_ACCESS_KEY_ID /
+AWS_SECRET_ACCESS_KEY, GOOGLE_APPLICATION_CREDENTIALS, ...).`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	Version:       flags.GetVersion(),
@@ -88,26 +96,15 @@ func operatorPreRun(cmd *cobra.Command, _ []string) error {
 }
 
 func addStoreFlags(fs *pflag.FlagSet) {
-	fs.String("s3-endpoint", "", "S3 endpoint URL, e.g. http://localhost:9000 (empty means AWS)")
-	fs.String("s3-bucket", "", "Bucket holding the blobs objects (required)")
-	fs.String("s3-prefix", "", "Key prefix inside the bucket, e.g. eth/ when several chains share one bucket")
-	fs.String("s3-region", "", "Region to sign requests for (default us-east-1, which is what Ceph RGW and MinIO expect)")
-	fs.Bool("s3-path-style", true, "Use path-style addressing (required by Ceph RGW and MinIO)")
-	fs.Duration("s3-timeout", 30*time.Second, "Per-request timeout for store operations")
+	fs.String("store-url", "", "Store URL (required): s3://host:port/bucket[/prefix]?region=none&insecure=true, s3://bucket?region=us-east-1, gs://bucket, az://account.container or file:///path")
+	fs.Duration("store-timeout", store.DefaultTimeout, "Timeout for each store operation")
 }
 
-func storeFromFlags(ctx context.Context, cmd *cobra.Command) (store.Store, error) {
-	cfg := store.S3Config{
-		Endpoint:  sflags.MustGetString(cmd, "s3-endpoint"),
-		Bucket:    sflags.MustGetString(cmd, "s3-bucket"),
-		Prefix:    sflags.MustGetString(cmd, "s3-prefix"),
-		Region:    sflags.MustGetString(cmd, "s3-region"),
-		PathStyle: sflags.MustGetBool(cmd, "s3-path-style"),
-		Timeout:   sflags.MustGetDuration(cmd, "s3-timeout"),
+func storeFromFlags(cmd *cobra.Command) (store.Store, error) {
+	storeURL := sflags.MustGetString(cmd, "store-url")
+	if storeURL == "" {
+		return nil, fmt.Errorf("--store-url is required")
 	}
-	if cfg.Bucket == "" {
-		return nil, fmt.Errorf("--s3-bucket is required")
-	}
-	zlog.Info("connecting to store", zap.String("endpoint", cfg.Endpoint), zap.String("bucket", cfg.Bucket), zap.String("prefix", cfg.Prefix))
-	return store.NewS3(ctx, cfg)
+	zlog.Info("opening store", zap.String("url", store.RedactURL(storeURL)))
+	return store.Open(storeURL, sflags.MustGetDuration(cmd, "store-timeout"))
 }

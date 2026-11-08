@@ -1,8 +1,9 @@
 // Package store is the object layout the blobs sink writes and the blobs API
-// reads. Every access path is a point lookup by key; nothing lists except the
-// handful of per-writer head objects.
+// reads, on any github.com/streamingfast/dstore backend (S3-compatible, GCS,
+// Azure, a local directory). Every access path is a point lookup by key;
+// nothing lists except the handful of per-writer head objects.
 //
-// Layout inside a bucket (optionally under a prefix):
+// Layout inside the store URL (a bucket or directory, optionally with a prefix):
 //
 //	slots/<slot>.pb     the serialized pinax.ethereum.blobs.v1.Slot, one per
 //	                    beacon block, including blocks that carry no blobs
@@ -87,6 +88,9 @@ func NormalizeRoot(s string) (string, error) {
 func ValidateWriter(writer string) error {
 	if writer == "" {
 		return errors.New("writer id must not be empty")
+	}
+	if strings.HasSuffix(writer, tmpSuffix) {
+		return fmt.Errorf("writer id %q: must not end in %s", writer, tmpSuffix)
 	}
 	for _, r := range writer {
 		ok := r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_' || r == '.'

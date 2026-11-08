@@ -3,7 +3,7 @@ This repository contains several components:
 - `proto` - Blobs protobuf definitions
 - `substreams` - Substreams modules to stream blobs data from substreams-enabled Consensus Layer Firehose
 - `subgraph` - Substreams-based Subgraph that uses substreams module
-- `blobs` - one binary: the Substreams sink writing blobs to an S3-compatible bucket, the REST API serving them as a drop-in replacement for Consensus Layer clients' blob APIs, and a migration tool for the legacy KV store
+- `blobs` - one binary: the Substreams sink writing blobs to an object store (S3-compatible, GCS, Azure or a local directory), the REST API serving them as a drop-in replacement for Consensus Layer clients' blob APIs, and a migration tool for the legacy KV store
 - `validator` - CLI tool to validate blobs data against execution and consensus layer
 
 ## Substreams

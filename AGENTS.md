@@ -5,7 +5,8 @@
 file, this file wins.
 
 Ethereum consensus-layer blobs (EIP-4844) as a service: a Substreams package extracts every
-beacon block's blobs, a sink writes them to an S3-compatible bucket, and a Beacon-compatible
+beacon block's blobs, a sink writes them to an object store (S3-compatible, GCS, Azure or a local
+directory), and a Beacon-compatible
 REST API serves them as a drop-in replacement for a consensus client's blob endpoints, with
 history far beyond the 18 days a beacon node keeps. Pinax runs it as `<chain>.blobs.pinax.network`;
 the deployment manifests live in a private repository and are out of scope here.
@@ -37,17 +38,23 @@ module is `github.com/pinax-network/blob-service/blobs`; the image is
 
 | Command | Job |
 |---|---|
-| `blobs sink <endpoint> <spkg> [<start>:<stop>]` | stream `map_blobs` into the bucket |
+| `blobs sink <endpoint> <spkg> [<start>:<stop>]` | stream `map_blobs` into the store |
 | `blobs api --config config.yaml` | serve `/eth/v1/beacon/blob_sidecars/{id}`, `/eth/v1/beacon/blobs/{id}`, `/health` |
 | `blobs migrate-kv <kv-serve-addr> [<from>:<to>]` | copy slots out of a legacy `substreams-sink-kv serve` |
 
-Packages: `store/` (object layout, S3 client, in-memory test store), `sink/` (the handler on top
+Packages: `store/` (object layout on top of dstore, in-memory test store), `sink/` (the handler on top
 of the substreams-sink library), `migrate/`, `cmd/` (cobra), and the API packages
 `controllers/`, `services/`, `dto/`, `server/`, `config/`, `swagger/`.
 
 ### Object layout and invariants
 
-Keys inside a bucket, optionally under a prefix:
+The store is a [dstore](https://github.com/streamingfast/dstore) URL (`--store-url` on `sink` and
+`migrate-kv`, `store.url` in the API config): `s3://host:port/bucket[/prefix]?region=none&insecure=true`
+for an S3-compatible endpoint, `s3://bucket?region=us-east-1` for AWS, `gs://bucket`,
+`az://account.container`, or `file:///path` / a plain path for a local directory. Credentials come
+from each backend's standard environment, never from flags or config.
+
+Keys inside the store URL (a bucket or directory, optionally with a prefix):
 
 ```text
 slots/<slot>.pb     serialized pinax.ethereum.blobs.v1.Slot, one per beacon block
@@ -92,8 +99,21 @@ These rules are what make the design safe; do not weaken them:
   missed slot, and publishes `head/<writer>` only when `--writer` is given. Omit `--writer` when
   backfilling below a live writer's head. KV keys are `slot:<n>` without padding, so it reads
   per key rather than scanning.
-- The AWS SDK is set to compute and validate checksums only when required; Ceph RGW does not
-  return them and the SDK otherwise logs a warning per GET.
+- dstore is used with no extension, no compression and overwrite on (`store.Open`). Keep
+  overwrite on: with it off, dstore silently skips writes to existing keys, so heads and cursors
+  would stop advancing. Each dstore write does a HEAD before the PUT, and deletes go one object at a
+  time (run 16 in parallel).
+- dstore's `memory://` backend cannot list, so it cannot serve heads; `store.Open` rejects it and
+  tests use `store.NewMemStore`. The local backend writes through `<name>.<random>.tmp` and renames;
+  `GetHead` skips `.tmp` names and writer ids may not end in `.tmp`.
+- For `s3://` URLs `store.Open` defaults `AWS_REQUEST_CHECKSUM_CALCULATION` and
+  `AWS_RESPONSE_CHECKSUM_VALIDATION` to `when_required` unless already set. Ceph RGW and MinIO do not
+  return the SDK's default checksums (it would warn on every GET), and older S3-compatible servers
+  reject its trailing PUT checksums. dstore builds its client from the default AWS config, which
+  reads these variables.
+- `HexBytes.MarshalJSON` writes `"0x<hex>"` straight into one buffer. Encoding blobs to JSON is
+  where the API spends its CPU on full `blob_sidecars` responses; do not route it back through
+  `hex.EncodeToString` + `json.Marshal`.
 - The API resolves `block_id` as `head`, a slot number or a `0x` block root. `genesis`,
   `finalized`, `justified` and SSZ responses are not implemented. `finalized` in responses is a
   heuristic (`head - slot >= chain.finality_lag`), not a consensus finality check.
@@ -103,22 +123,22 @@ These rules are what make the design safe; do not weaken them:
 ```bash
 cd blobs
 task build             # ./blobs, static, version from the git tag or 'untagged'
-task test              # go test ./... (store test runs against an in-process fake S3)
+task test              # go test ./... (store test runs against a temp dir and an in-process fake S3)
 task test:format       # gofmt check, same as CI
 golangci-lint run ./...
 task generate:go       # swagger from the annotations in cmd/api.go — commit the result
 task protogen          # Go bindings from ../proto
 ```
 
-Point the store test at a real endpoint with `BLOBS_S3_TEST_ENDPOINT=http://host:9000` and AWS
-credentials in the environment. For a full local run, start any S3 (MinIO, or gofakes3 as in
-`store/s3_test.go`), create a bucket, and stream a short range from the public endpoint:
+Add a real store to the store test with `BLOBS_TEST_STORE_URL=s3://host:9000/bucket?region=none&insecure=true`
+and the backend's credentials in the environment. A full local run needs no S3 at all: stream a
+short range from the public endpoint into a directory and serve it.
 
 ```bash
-SUBSTREAMS_API_KEY=<your key> AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... \
+SUBSTREAMS_API_KEY=<your key> \
   ./blobs sink eth-cl.substreams.pinax.network:443 ../substreams/eth-blobs-v0.10.0.spkg 15600000:15600020 \
-  --writer dev --batch-size 5 --s3-endpoint http://localhost:9000 --s3-bucket blobs-eth
-./blobs api --config config.yaml      # store section pointing at the same bucket
+  --writer dev --batch-size 5 --store-url ./data/blobs-eth
+./blobs api --config config.yaml      # store.url: ./data/blobs-eth
 curl localhost:8080/eth/v1/beacon/blob_sidecars/15600010
 ```
 

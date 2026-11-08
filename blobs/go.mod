@@ -3,10 +3,6 @@ module github.com/pinax-network/blob-service/blobs
 go 1.26.0
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.47.8
-	github.com/aws/aws-sdk-go-v2/config v1.33.16
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.9
-	github.com/aws/smithy-go v1.28.8
 	github.com/friendsofgo/errors v0.9.2
 	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-contrib/zap v1.1.0
@@ -19,6 +15,7 @@ require (
 	github.com/streamingfast/bstream v0.0.2-0.20260219205021-a73f004bfdea
 	github.com/streamingfast/cli v0.0.4-0.20250815192146-d8a233ec3d0b
 	github.com/streamingfast/dmetrics v0.0.0-20260109212625-35256f512c62
+	github.com/streamingfast/dstore v0.1.3-0.20260113210117-94d66eda2027
 	github.com/streamingfast/logging v0.0.0-20260108192805-38f96de0a641
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/substreams v1.18.2
@@ -61,7 +58,9 @@ require (
 	github.com/RoaringBitmap/roaring v1.9.1 // indirect
 	github.com/alecthomas/participle v0.7.1 // indirect
 	github.com/auth0/go-jwt-middleware v1.0.1 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.47.8 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.26 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.33.16 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.16 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.20.8 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.75 // indirect
@@ -72,10 +71,12 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.11.12 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.11 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.20.11 // indirect
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.114.9 // indirect
 	github.com/aws/aws-sdk-go-v2/service/signin v1.12.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.39.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.44.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.51.9 // indirect
+	github.com/aws/smithy-go v1.28.8 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -174,7 +175,6 @@ require (
 	github.com/streamingfast/dbin v0.9.1-0.20231117225723-59790c798e2c // indirect
 	github.com/streamingfast/derr v0.0.0-20250814163534-bd7407bd89d7 // indirect
 	github.com/streamingfast/dgrpc v0.0.0-20260224192836-e5cd6cffceff // indirect
-	github.com/streamingfast/dstore v0.1.3-0.20260113210117-94d66eda2027 // indirect
 	github.com/streamingfast/firehose-networks v0.2.2 // indirect
 	github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308 // indirect
 	github.com/streamingfast/pbgo v0.0.6-0.20250120164644-a58d8066ab4b // indirect

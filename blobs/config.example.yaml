@@ -7,11 +7,7 @@ chain:
   name: "Ethereum"              # The chain name for Swagger documentation
   # finality_lag: 64            # Optional. Slots behind head before a slot is reported finalized. Defaults to 64 (Ethereum mainnet, 2 epochs). Gnosis: 32. Higher = more conservative.
 
-store:                          # The bucket the sink writes. Credentials come from AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY.
-  endpoint: "http://localhost:9000"  # S3 endpoint URL; empty for AWS proper
-  bucket: "blobs-eth"
-  # prefix: "eth"               # Key prefix when several chains share a bucket
-  # region: "us-east-1"         # Signing region; the default suits Ceph RGW and MinIO
-  path_style: true              # Required by Ceph RGW and MinIO
-  # timeout: 30s                # Per-request timeout
+store:                          # Where the sink writes. Credentials come from the backend's environment (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY, GOOGLE_APPLICATION_CREDENTIALS, ...).
+  url: "s3://localhost:9000/blobs-eth?region=none&insecure=true"  # dstore URL: s3://host:port/bucket[/prefix]?region=..&insecure=true, s3://bucket?region=us-east-1 (AWS), gs://bucket, az://account.container, file:///path
+  # timeout: 30s                # Timeout for each store operation
   # head_ttl: 2s                # How long a fetched head is reused before asking the store again

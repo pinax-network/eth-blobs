@@ -28,7 +28,7 @@ func Initialize(ctx context.Context, configPath string, debug bool) (*App, error
 		return nil, fmt.Errorf("load config %s: %w", configPath, err)
 	}
 
-	st, err := store.NewS3(ctx, cfg.Store.S3Config)
+	st, err := store.Open(cfg.Store.URL, cfg.Store.Timeout)
 	if err != nil {
 		return nil, fmt.Errorf("connect to store: %w", err)
 	}
