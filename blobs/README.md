@@ -64,10 +64,11 @@ AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... ./blobs api --config config.yaml
 curl -s localhost:8080/health
 curl -s localhost:8080/eth/v1/beacon/blob_sidecars/head | head -c 300
 
-# Sink, from a recent slot to the head and on (SUBSTREAMS_API_KEY for the public endpoint)
+# Sink, from a slot to the head and on (SUBSTREAMS_API_KEY for the public endpoint);
+# --start-block=-1 starts at the head instead. It applies only until the writer has a cursor.
 ./blobs sink eth-cl.substreams.pinax.network:443 \
-    https://github.com/pinax-network/eth-blobs/releases/download/v0.10.0/eth-blobs-v0.10.0.spkg 15600000: \
-    --writer=dc1 \
+    https://github.com/pinax-network/eth-blobs/releases/download/v0.10.0/eth-blobs-v0.10.0.spkg \
+    --start-block=15600000 --writer=dc1 \
     --store-url="s3://localhost:9000/blobs-eth?region=none&insecure=true" --metrics-listen-addr=:9102
 
 # One-off migration out of the existing KV store, then start the sink from <to>+1
