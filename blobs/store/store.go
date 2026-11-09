@@ -5,7 +5,7 @@
 //
 // Layout inside the store URL (a bucket or directory, optionally with a prefix):
 //
-//	slots/<slot>.pb     zstd frame of the serialized pinax.ethereum.blobs.v1.Slot, one per
+//	slots/<slot>.pb.zst zstd frame of the serialized pinax.ethereum.blobs.v1.Slot, one per
 //	                    beacon block, including blocks that carry no blobs
 //	roots/0x<root>      decimal slot number of the block with that root
 //	head/<writer>       JSON Head of the newest slot <writer> has written
@@ -59,7 +59,7 @@ type Store interface {
 
 // Keys. Slots are plain decimal: they are never listed, so there is no need
 // for zero padding.
-func SlotKey(slot uint64) string   { return fmt.Sprintf("slots/%d.pb", slot) }
+func SlotKey(slot uint64) string   { return fmt.Sprintf("slots/%d.pb.zst", slot) }
 func RootKey(root string) string   { return "roots/" + root }
 func HeadKey(writer string) string { return "head/" + writer }
 func CursorKey(writer string) string {

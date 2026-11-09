@@ -35,7 +35,7 @@ func realisticSlot(t testing.TB, slot uint64, n int) []byte {
 func TestSlotCodecRoundTrip(t *testing.T) {
 	raw := realisticSlot(t, 15600000, 6)
 	stored := EncodeSlot(raw)
-	if !bytes.HasPrefix(stored, zstdMagic) {
+	if !bytes.HasPrefix(stored, []byte{0x28, 0xb5, 0x2f, 0xfd}) {
 		t.Fatal("stored slot must be a zstd frame")
 	}
 	if len(stored) >= len(raw)*3/4 {
@@ -47,27 +47,14 @@ func TestSlotCodecRoundTrip(t *testing.T) {
 	}
 }
 
-// Objects written before compression are raw serialized Slots and must read
-// back unchanged, including a slot-0 Slot whose first field is omitted.
-func TestDecodeSlotPassesRawThrough(t *testing.T) {
-	cases := map[string]*pbbl.Slot{
-		"slot zero, no blobs": {Root: []byte{1, 2, 3}},
-		"empty":               {},
-		"with blobs":          {Slot: 42, Root: make([]byte, 32), Blobs: []*pbbl.Blob{{Index: 1, Blob: []byte{9}}}},
-		"parent root first":   {ParentRoot: []byte{0x28, 0xb5, 0x2f, 0xfd}},
+// A raw serialized Slot is not a valid slot object.
+func TestDecodeSlotRejectsRawSlot(t *testing.T) {
+	raw, err := proto.Marshal(&pbbl.Slot{Slot: 42, Root: make([]byte, 32)})
+	if err != nil {
+		t.Fatal(err)
 	}
-	for name, pb := range cases {
-		raw, err := proto.Marshal(pb)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if bytes.HasPrefix(raw, zstdMagic) {
-			t.Fatalf("%s: a serialized Slot must never look like a zstd frame", name)
-		}
-		got, err := DecodeSlot(raw)
-		if err != nil || !bytes.Equal(got, raw) {
-			t.Errorf("%s: raw object must pass through: err=%v", name, err)
-		}
+	if _, err := DecodeSlot(raw); err == nil {
+		t.Fatal("an uncompressed Slot must not decode")
 	}
 }
 
@@ -79,9 +66,8 @@ func TestDecodeSlotRejectsCorruptFrame(t *testing.T) {
 	}
 }
 
-// Slots go to the backend compressed; objects written before compression was
-// introduced still read back.
-func TestDStoreCompressesSlotsAndReadsLegacy(t *testing.T) {
+// Slots go to the backend compressed, under the .pb.zst key.
+func TestDStoreCompressesSlots(t *testing.T) {
 	st, err := Open("file://"+t.TempDir(), 0)
 	if err != nil {
 		t.Fatal(err)
@@ -91,25 +77,20 @@ func TestDStoreCompressesSlotsAndReadsLegacy(t *testing.T) {
 	if err := st.PutSlot(ctx, 100, raw); err != nil {
 		t.Fatal(err)
 	}
+	if SlotKey(100) != "slots/100.pb.zst" {
+		t.Fatalf("slot key: %s", SlotKey(100))
+	}
 	r, err := st.store.OpenObject(ctx, SlotKey(100))
 	if err != nil {
 		t.Fatal(err)
 	}
 	onDisk, _ := io.ReadAll(r)
 	_ = r.Close()
-	if !bytes.HasPrefix(onDisk, zstdMagic) || len(onDisk) >= len(raw) {
-		t.Fatalf("slot object on disk must be compressed: %d bytes for %d raw", len(onDisk), len(raw))
+	if !bytes.HasPrefix(onDisk, []byte{0x28, 0xb5, 0x2f, 0xfd}) || len(onDisk) >= len(raw) {
+		t.Fatalf("slot object on disk must be a zstd frame: %d bytes for %d raw", len(onDisk), len(raw))
 	}
 	if got, err := st.GetSlot(ctx, 100); err != nil || !bytes.Equal(got, raw) {
 		t.Fatalf("GetSlot must return the raw Slot: err=%v", err)
-	}
-
-	legacy := realisticSlot(t, 101, 1)
-	if err := st.store.WriteObject(ctx, SlotKey(101), bytes.NewReader(legacy)); err != nil {
-		t.Fatal(err)
-	}
-	if got, err := st.GetSlot(ctx, 101); err != nil || !bytes.Equal(got, legacy) {
-		t.Fatalf("legacy uncompressed slot object must read back: err=%v", err)
 	}
 }
 
