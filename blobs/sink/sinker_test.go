@@ -9,9 +9,9 @@ import (
 
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/shutter"
-	sink "github.com/streamingfast/substreams-sink"
 	pbsubstreamsrpc "github.com/streamingfast/substreams/pb/sf/substreams/rpc/v2"
 	pbsubstreams "github.com/streamingfast/substreams/pb/sf/substreams/v1"
+	sink "github.com/streamingfast/substreams/sink"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"

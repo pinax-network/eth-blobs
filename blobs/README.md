@@ -91,7 +91,7 @@ Sink behaviour worth knowing:
   times with backoff before the sink exits;
   every write is idempotent so a retry is always safe.
 
-Metrics: the substreams-sink library's `head_block_number`, `head_block_time_drift` and
+Metrics: the Substreams sink library's `head_block_number`, `head_block_time_drift` and
 `substreams_sink_*`, plus `blobs_sink_slots_written`, `blobs_sink_blobs_written`,
 `blobs_sink_bytes_written`, `blobs_sink_flush`, `blobs_sink_last_flush_duration_seconds`,
 `blobs_sink_undo`, `blobs_sink_slots_deleted` and `blobs_sink_head_slot`. The API exposes gin
