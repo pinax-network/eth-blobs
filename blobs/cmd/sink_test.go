@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -35,24 +36,33 @@ func TestSinkLibraryFlags(t *testing.T) {
 	}
 }
 
-// The range argument keeps its meaning on top of the library's flags.
-func TestSinkBlockRangeArgument(t *testing.T) {
-	for _, tc := range []struct{ arg, start, stop string }{
-		{"15600000:", "15600000", "0"},
-		{"15600000:15600020", "15600000", "15600020"},
-		{"15600000:+20", "15600000", "+20"},
-		{":15600020", "", "15600020"},
-		{"15600020", "", "15600020"},
-		{":", "", "0"},
+// A negative start block is sent as is; the server resolves it against the
+// chain head. Every spelling must reach the flag rather than be taken for
+// shorthand flags.
+func TestSinkNegativeStartBlock(t *testing.T) {
+	for _, argv := range [][]string{
+		{"--start-block=-1"},
+		{"--start-block", "-1"},
+		{"-s", "-1"},
+		{"eth-cl.example:443", "blobs.spkg", "-s", "-1", "--writer", "dc1"},
 	} {
 		cmd := &cobra.Command{Use: "sink"}
 		addSinkFlags(cmd.Flags())
-		if err := setBlockRange(cmd.Flags(), tc.arg); err != nil {
-			t.Fatalf("%q: %v", tc.arg, err)
+		if err := cmd.ParseFlags(argv); err != nil {
+			t.Fatalf("%q: %v", argv, err)
 		}
-		start, stop := sflags.MustGetString(cmd, "start-block"), sflags.MustGetString(cmd, "stop-block")
-		if start != tc.start || stop != tc.stop {
-			t.Fatalf("%q: start-block %q stop-block %q, want %q %q", tc.arg, start, stop, tc.start, tc.stop)
+		if got := sflags.MustGetString(cmd, "start-block"); got != "-1" {
+			t.Fatalf("%q: start-block = %q, want -1", argv, got)
 		}
+	}
+}
+
+func TestSinkRangeArgumentPointsToFlags(t *testing.T) {
+	err := sinkArgs(sinkCmd, []string{"eth-cl.example:443", "blobs.spkg", "15600000:"})
+	if err == nil || !strings.Contains(err.Error(), "--start-block") {
+		t.Fatalf("a range argument must point to --start-block, got %v", err)
+	}
+	if err := sinkArgs(sinkCmd, []string{"eth-cl.example:443", "blobs.spkg"}); err != nil {
+		t.Fatal(err)
 	}
 }

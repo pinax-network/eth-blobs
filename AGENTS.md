@@ -38,7 +38,7 @@ module is `github.com/pinax-network/blob-service/blobs`; the image is
 
 | Command | Job |
 |---|---|
-| `blobs sink <endpoint> <spkg> [<start>:<stop>]` | stream `map_blobs` into the store |
+| `blobs sink <endpoint> <spkg> [--start-block N] [--stop-block M]` | stream `map_blobs` into the store |
 | `blobs api --config config.yaml` | serve `/eth/v1/beacon/blob_sidecars/{id}`, `/eth/v1/beacon/blobs/{id}`, `/health` |
 | `blobs migrate-kv <kv-serve-addr> [<from>:<to>]` | copy slots out of a legacy `substreams-sink-kv serve` |
 
@@ -81,9 +81,11 @@ These rules are what make the design safe; do not weaken them:
 4. **Several writers may share a bucket; each has a unique `--writer`.** Slot and root objects
    are deterministic per block; head and cursor are per writer. The API takes the highest head
    across writers. Two writers with the same id corrupt each other's cursor.
-5. **`START_BLOCK` applies only when the writer has no cursor object.** With a cursor the sink
+5. **`--start-block` applies only when the writer has no cursor object.** With a cursor the sink
    resumes from it, whatever the block range says. Deleting `cursor/<writer>` is how you restart a
-   writer from the range.
+   writer from the range. A negative `--start-block` is sent as is and resolved by the server
+   against the chain head (`-1` is the block below it): a new writer starts at the head with no
+   history below it, and where exactly depends on when it first starts.
 6. **No library undo buffer; the sink handles every undo.** `blobs sink` does not register
    `--undo-buffer-size`. With a buffer the library swallows undo signals, a fork deeper than the
    buffer kills the stream, and on restart the empty buffer swallows the server's undo again, so
@@ -123,10 +125,12 @@ These rules are what make the design safe; do not weaken them:
   `--metrics-listen-addr`; that one serves the library's metrics once `sink.Metrics.Register()`
   has run, and the drift alert reads `head_block_time_drift` from it. It redefines
   `--max-retries` with a default of 15 (about 5 minutes of backoff) instead of the library's 3.
-  The endpoint and range arguments are copied into the library's hidden `--endpoint`,
-  `--start-block` and `--stop-block`.
+  The endpoint argument is copied into the library's hidden `--endpoint`; the range is the
+  library's own `--start-block` and `--stop-block` (the `[<start>:<stop>]` argument is gone: a
+  negative start could not be written there, as cobra reads `-1:` as a flag).
 - The library's range-completion callback passes the last cursor *received*; the sink ignores it
-  and saves the cursor of the last block it wrote. A bounded `A:B` run writes slots A..B-1.
+  and saves the cursor of the last block it wrote. A bounded run (`--start-block A --stop-block B`)
+  writes slots A..B-1.
   Production runs are unbounded.
 - `migrate-kv` does not recopy slots already in the store unless `--overwrite`, but checks and
   repairs their root object and counts them towards the head; it treats a KV `NotFound` as a
@@ -174,11 +178,16 @@ short range from the public endpoint into a directory and serve it.
 
 ```bash
 SUBSTREAMS_API_KEY=<your key> \
-  ./blobs sink eth-cl.substreams.pinax.network:443 ../substreams/eth-blobs-v0.10.0.spkg 15600000:15600020 \
+  ./blobs sink eth-cl.substreams.pinax.network:443 ../substreams/eth-blobs-v0.10.0.spkg \
+  --start-block 15600000 --stop-block 15600020 \
   --writer dev --batch-size 5 --store-url ./data/blobs-eth
 ./blobs api --config config.yaml      # store.url: ./data/blobs-eth
 curl localhost:8080/eth/v1/beacon/blob_sidecars/15600010
 ```
+
+A historical range only ever delivers final blocks. To exercise the live path (blocks that are
+not final yet, undo signals, missed slots at the tip), start at the head instead:
+`--start-block=-1` and no `--stop-block`.
 
 Public Substreams endpoints need `SUBSTREAMS_API_KEY`; a self-hosted plaintext endpoint needs
 `--plaintext` instead.
