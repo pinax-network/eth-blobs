@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "blobs api",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/blobs",
+            "cwd": "${workspaceFolder}/blobs",
+            "args": ["api", "--config", "config.yaml", "--debug"]
+        },
+        {
+            "name": "blobs sink (from slot 15600000, local MinIO)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/blobs",
+            "cwd": "${workspaceFolder}/blobs",
+            "env": {"AWS_ACCESS_KEY_ID": "minio", "AWS_SECRET_ACCESS_KEY": "minio123"},
+            "args": ["sink", "eth-cl.substreams.pinax.network:443", "../substreams/eth-blobs-v0.10.0.spkg", "15600000:",
+                     "--writer", "dev", "--store-url", "s3://localhost:9000/blobs-eth?region=none&insecure=true",
+                     "--metrics-listen-addr", ":9102"]
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+application:
+  gin_mode: "release"           # The Gin framework application level must be one of "debug" or "release"
+  http_host: "0.0.0.0:8080"     # The HTTP host this application is listening on
+  domain: "localhost:8080"      # The domain used for the Swagger documentation
+
+chain:
+  name: "Ethereum"              # The chain name for Swagger documentation
+  # finality_lag: 64            # Optional. Slots behind head before a slot is reported finalized. Defaults to 64 (Ethereum mainnet, 2 epochs). Gnosis: 32. Higher = more conservative.
+
+store:                          # Where the sink writes. Credentials come from the backend's environment (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY, GOOGLE_APPLICATION_CREDENTIALS, ...).
+  url: "s3://localhost:9000/blobs-eth?region=none&insecure=true"  # dstore URL: s3://host:port/bucket[/prefix]?region=..&insecure=true, s3://bucket?region=us-east-1 (AWS), gs://bucket, az://account.container, file:///path
+  # timeout: 30s                # Timeout for each store operation
+  # head_ttl: 2s                # How long a fetched head is reused before asking the store again
