@@ -17,11 +17,13 @@ local directory:
 | S3-compatible endpoint | `s3://localhost:9000/blobs-eth?region=none&insecure=true` (drop `insecure` for https) |
 | AWS S3 | `s3://blobs-eth?region=us-east-1` |
 | Google Cloud Storage | `gs://blobs-eth` |
-| Azure Blob Storage | `az://account.container` |
+| Azure Blob Storage | `az://account.container/blobs-eth` (a prefix is required; see below) |
 | Local directory | `file:///var/lib/blobs/eth` (sink and API must share the filesystem) |
 
 Append a path to use a prefix inside the bucket (`s3://host:9000/blobs/eth?...`), which lets
-several chains share one. Credentials come from each backend's standard environment
+several chains share one. For Azure the prefix is mandatory: dstore's backend lists a container
+root under the wrong prefix, so the API would never find a head. The tests cover the S3 and local
+backends; GCS and Azure are untested here. Credentials come from each backend's standard environment
 (`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, `GOOGLE_APPLICATION_CREDENTIALS`, ...), never from a
 config file. For `s3://` the binary defaults `AWS_REQUEST_CHECKSUM_CALCULATION` and
 `AWS_RESPONSE_CHECKSUM_VALIDATION` to `when_required`, which S3-compatible servers need.

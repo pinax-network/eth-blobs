@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/bloberror"
 	"github.com/streamingfast/dstore"
 	"golang.org/x/sync/errgroup"
 )
@@ -43,10 +44,14 @@ var _ Store = (*DStore)(nil)
 //	s3://host:port/bucket[/prefix]?region=none&insecure=true   S3-compatible endpoint (Ceph RGW, MinIO, R2)
 //	s3://bucket[/prefix]?region=us-east-1                       AWS S3
 //	gs://bucket[/prefix]                                        Google Cloud Storage
-//	az://account.container[/prefix]                             Azure Blob Storage
+//	az://account.container/prefix                               Azure Blob Storage (a prefix is required)
 //	file:///var/lib/blobs                                       local directory (created if missing)
 //
 // dstore's memory:// backend cannot list, so it cannot serve heads; tests use MemStore.
+// Its Azure backend lists a container root under "/<prefix>" while writing objects
+// without the slash, so heads at the container root are never found: az:// URLs
+// must carry a prefix. Only the S3 and local backends are exercised by this
+// repository's tests.
 // Credentials come from each backend's standard environment (AWS_ACCESS_KEY_ID /
 // AWS_SECRET_ACCESS_KEY, GOOGLE_APPLICATION_CREDENTIALS, ...), so they stay out of
 // flags and config files. timeout bounds each operation; zero means DefaultTimeout.
@@ -56,6 +61,12 @@ func Open(storeURL string, timeout time.Duration) (*DStore, error) {
 	}
 	if strings.HasPrefix(storeURL, "memory:") {
 		return nil, errors.New("memory:// stores cannot list heads; use store.NewMemStore in tests")
+	}
+	if strings.HasPrefix(storeURL, "az:") {
+		u, err := url.Parse(storeURL)
+		if err != nil || strings.Trim(u.Path, "/") == "" {
+			return nil, errors.New("az:// stores need a prefix (az://account.container/prefix): dstore lists a container root under the wrong prefix, so heads would never be found")
+		}
 	}
 	if strings.HasPrefix(storeURL, "s3:") {
 		s3ChecksumDefaults()
@@ -162,13 +173,21 @@ func (s *DStore) DeleteSlots(ctx context.Context, slots []uint64) error {
 		g.Go(func() error {
 			ctx, cancel := context.WithTimeout(gctx, s.timeout)
 			defer cancel()
-			if err := s.store.DeleteObject(ctx, key); err != nil && !errors.Is(err, dstore.ErrNotFound) {
+			if err := s.store.DeleteObject(ctx, key); err != nil && !isNotFound(err) {
 				return fmt.Errorf("delete %s: %w", key, err)
 			}
 			return nil
 		})
 	}
 	return g.Wait()
+}
+
+// isNotFound reports whether a dstore error means the object does not exist.
+// The S3, GCS and local backends return dstore.ErrNotFound; the Azure backend
+// passes the SDK's BlobNotFound through, so it is recognised here to keep
+// deletes idempotent.
+func isNotFound(err error) bool {
+	return errors.Is(err, dstore.ErrNotFound) || bloberror.HasCode(err, bloberror.BlobNotFound)
 }
 
 func (s *DStore) GetRoot(ctx context.Context, root string) (uint64, error) {

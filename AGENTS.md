@@ -51,7 +51,9 @@ of the substreams-sink library), `migrate/`, `cmd/` (cobra), and the API package
 The store is a [dstore](https://github.com/streamingfast/dstore) URL (`--store-url` on `sink` and
 `migrate-kv`, `store.url` in the API config): `s3://host:port/bucket[/prefix]?region=none&insecure=true`
 for an S3-compatible endpoint, `s3://bucket?region=us-east-1` for AWS, `gs://bucket`,
-`az://account.container`, or `file:///path` / a plain path for a local directory. Credentials come
+`az://account.container/prefix` (Azure needs a prefix: dstore lists a container root under the
+wrong prefix, so heads would never be found; only the S3 and local backends are covered by the
+tests), or `file:///path` / a plain path for a local directory. Credentials come
 from each backend's standard environment, never from flags or config.
 
 Keys inside the store URL (a bucket or directory, optionally with a prefix):

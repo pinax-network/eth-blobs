@@ -12,8 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/johannesboyne/gofakes3"
 	"github.com/johannesboyne/gofakes3/backend/s3mem"
+	"github.com/streamingfast/dstore"
 )
 
 // storeURLs returns one base URL per backend to run the suite against. Each
@@ -196,10 +198,24 @@ func TestDStoreSkipsLocalTempFiles(t *testing.T) {
 }
 
 func TestOpenRejectsBadURLs(t *testing.T) {
-	for _, u := range []string{"", "memory://x", "ftp://host/bucket", "s3://bucket/prefix"} { // the last lacks region=
+	// s3://bucket/prefix lacks region=; az:// without a prefix would never find heads.
+	for _, u := range []string{"", "memory://x", "ftp://host/bucket", "s3://bucket/prefix", "az://account.container", "az://account.container/"} {
 		if _, err := Open(u, 0); err == nil {
 			t.Errorf("Open(%q): want error", u)
 		}
+	}
+}
+
+// Azure's DeleteBlob reports a missing blob as an SDK error, not dstore.ErrNotFound.
+func TestIsNotFoundCoversAzure(t *testing.T) {
+	if !isNotFound(dstore.ErrNotFound) || !isNotFound(fmt.Errorf("wrapped: %w", dstore.ErrNotFound)) {
+		t.Error("dstore.ErrNotFound must count as not found")
+	}
+	if !isNotFound(&azcore.ResponseError{ErrorCode: "BlobNotFound", StatusCode: 404}) {
+		t.Error("Azure BlobNotFound must count as not found")
+	}
+	if isNotFound(&azcore.ResponseError{ErrorCode: "AuthorizationFailure", StatusCode: 403}) || isNotFound(errors.New("boom")) {
+		t.Error("other errors must not count as not found")
 	}
 }
 
