@@ -22,7 +22,7 @@ store, plus the block-root index and this writer's head and cursor objects.
 
   <endpoint>      Substreams endpoint, e.g. eth-cl.substreams.pinax.network:443 (or a plaintext one with --plaintext)
   <manifest>      URL or path of the eth-blobs .spkg
-  <start>:<stop>  Optional block range; omit to follow the chain. Negative start is relative to head.
+  <start>:<stop>  Optional block range (absolute slots, <stop> exclusive); omit to follow the chain.
 
 Several sinks (one per DC) may write the same bucket as long as each uses its own --writer:
 slot and root objects are identical for a given block, and head and cursor are per writer.
@@ -50,7 +50,7 @@ func init() {
 	fs.String("module", blobsink.OutputModuleName, "Output module to stream")
 	fs.Int("batch-size", 200, "Blocks per flush while catching up; live blocks flush one by one")
 	fs.Int("parallelism", 16, "Concurrent object writes within a flush")
-	fs.Int("flush-retries", 5, "Attempts for a failed batch write before the sink exits")
+	fs.Int("flush-retries", 5, "Attempts for each failed store write (batch, head, cursor) before the sink exits")
 	rootCmd.AddCommand(sinkCmd)
 }
 

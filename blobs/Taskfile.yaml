@@ -102,15 +102,16 @@ tasks:
       - ./{{.BINARY}} api --config ./config.yaml {{.CLI_ARGS}}
 
   start:sink:
-    desc: "Streams the last 100 slots of mainnet into STORE_URL (default: ./data/blobs-eth, a local directory). An s3:// URL needs AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY."
+    desc: "Streams mainnet from START_BLOCK (default 15600000; pick a recent slot) into STORE_URL (default: ./data/blobs-eth, a local directory). An s3:// URL needs AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY."
     deps:
       - build
     cmds:
       - |
-        ./{{.BINARY}} sink {{.ENDPOINT}} ../substreams/eth-blobs-v0.10.0.spkg -100: \
+        ./{{.BINARY}} sink {{.ENDPOINT}} ../substreams/eth-blobs-v0.10.0.spkg {{.START_BLOCK}}: \
           --writer dev --store-url '{{.STORE_URL}}' --metrics-listen-addr :9102 {{.CLI_ARGS}}
     vars:
       ENDPOINT: '{{.ENDPOINT | default "eth-cl.substreams.pinax.network:443"}}'
+      START_BLOCK: '{{.START_BLOCK | default "15600000"}}'
       STORE_URL: '{{.STORE_URL | default "./data/blobs-eth"}}'
 
   start:docker:

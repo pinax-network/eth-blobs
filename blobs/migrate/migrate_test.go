@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -240,4 +241,63 @@ func TestTransientReadErrorsAreRetried(t *testing.T) {
 		requireRoot(t, mem, slot)
 	}
 	requireHead(t, mem, 102)
+}
+
+// A writer id the API would ignore (DStore.GetHead skips .tmp names) must be
+// refused before anything is copied.
+func TestWriterIsValidated(t *testing.T) {
+	addr := serveKV(t, 100, 100)
+	st := store.NewMemStore()
+	_, err := Run(context.Background(), Config{KVAddr: addr, From: 100, To: 100, Writer: "migration.tmp", Workers: 1, Retries: 1}, st, zap.NewNop())
+	if err == nil || !strings.Contains(err.Error(), ".tmp") {
+		t.Fatalf("expected a writer validation error, got %v", err)
+	}
+	if len(st.Keys()) != 0 {
+		t.Fatalf("nothing should be written, got %v", st.Keys())
+	}
+}
+
+// The final head write is retried like every other store write: without it a
+// transient failure after a full copy would force a rerun over the range.
+func TestHeadPublicationIsRetried(t *testing.T) {
+	addr := serveKV(t, 101, 100, 101)
+	st := store.NewMemStore()
+	st.FailTimes[store.HeadKey("migration")] = 1
+	r, err := Run(context.Background(), Config{KVAddr: addr, From: 100, To: 101, Writer: "migration", Workers: 2, Retries: 2}, st, zap.NewNop())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Copied != 2 || st.CallsFor(store.HeadKey("migration")) != 2 {
+		t.Errorf("copied=%d head attempts=%d", r.Copied, st.CallsFor(store.HeadKey("migration")))
+	}
+	requireHead(t, st, 101)
+}
+
+// hangingKV accepts connections and never answers: a stalled source must fail
+// the read at KVTimeout instead of hanging the migration.
+type hangingKV struct{ pbkv.UnimplementedKvServer }
+
+func (hangingKV) Get(ctx context.Context, _ *pbkv.GetRequest) (*pbkv.GetResponse, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func TestKVReadsHaveADeadline(t *testing.T) {
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := grpc.NewServer()
+	pbkv.RegisterKvServer(srv, hangingKV{})
+	go func() { _ = srv.Serve(lis) }()
+	t.Cleanup(srv.Stop)
+
+	start := time.Now()
+	_, err = Run(context.Background(), Config{KVAddr: lis.Addr().String(), From: 100, To: 100, Workers: 1, Retries: 1, KVTimeout: 200 * time.Millisecond}, store.NewMemStore(), zap.NewNop())
+	if err == nil || !strings.Contains(err.Error(), "reading kv head") {
+		t.Fatalf("expected the head read to fail, got %v", err)
+	}
+	if took := time.Since(start); took > 5*time.Second {
+		t.Fatalf("a stalled KV must fail at the deadline, took %s", took)
+	}
 }

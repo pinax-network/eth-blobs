@@ -47,7 +47,13 @@ type Config struct {
 	// and repaired) so an interrupted run can simply be rerun.
 	Overwrite bool
 	Retries   int
+	// KVTimeout bounds each KV read. Zero means DefaultKVTimeout.
+	KVTimeout time.Duration
 }
+
+// DefaultKVTimeout bounds a single KV read, so a server that accepts the
+// connection but stops answering fails the read and lets the retry run.
+const DefaultKVTimeout = 30 * time.Second
 
 type Report struct {
 	Copied  uint64
@@ -75,6 +81,16 @@ func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*
 	if cfg.Retries <= 0 {
 		cfg.Retries = DefaultRetries
 	}
+	if cfg.KVTimeout <= 0 {
+		cfg.KVTimeout = DefaultKVTimeout
+	}
+	if cfg.Writer != "" {
+		// The sink validates its writer the same way; a bad id here (say one
+		// ending in .tmp) would publish a head the API never reads.
+		if err := store.ValidateWriter(cfg.Writer); err != nil {
+			return nil, err
+		}
+	}
 
 	conn, err := grpc.NewClient(cfg.KVAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -86,7 +102,7 @@ func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*
 	defer func() { _ = conn.Close() }()
 	kv := pbkv.NewKvClient(conn)
 
-	kvHead, err := kvHead(ctx, kv)
+	kvHead, err := kvHead(ctx, kv, cfg.KVTimeout, cfg.Retries, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +187,7 @@ func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*
 						continue
 					}
 				}
-				value, found, err := getWithRetry(gctx, kv, fmt.Sprintf("slot:%d", slot), cfg.Retries, logger)
+				value, found, err := getWithRetry(gctx, kv, fmt.Sprintf("slot:%d", slot), cfg.KVTimeout, cfg.Retries, logger)
 				if err != nil {
 					return err
 				}
@@ -218,7 +234,7 @@ func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*
 
 	if cfg.Writer != "" && report.HighSlot > 0 {
 		head := store.Head{Slot: report.HighSlot, Root: report.HighRoot, Timestamp: report.HighTime}
-		if err := st.PutHead(ctx, cfg.Writer, head); err != nil {
+		if err := retry(ctx, cfg.Retries, logger, func() error { return st.PutHead(ctx, cfg.Writer, head) }); err != nil {
 			return report, fmt.Errorf("publishing head: %w", err)
 		}
 		logger.Info("published head", zap.String("writer", cfg.Writer), zap.Uint64("slot", head.Slot))
@@ -267,12 +283,14 @@ func ensureIndexed(ctx context.Context, st store.Store, slot uint64, data []byte
 	return fixed, nil
 }
 
-func kvHead(ctx context.Context, kv pbkv.KvClient) (uint64, error) {
-	resp, err := kv.Get(ctx, &pbkv.GetRequest{Key: "head"})
+func kvHead(ctx context.Context, kv pbkv.KvClient, timeout time.Duration, retries int, logger *zap.Logger) (uint64, error) {
+	v, found, err := getWithRetry(ctx, kv, "head", timeout, retries, logger)
 	if err != nil {
 		return 0, fmt.Errorf("reading kv head: %w", err)
 	}
-	v := resp.GetValue()
+	if !found {
+		return 0, errors.New("kv head: not found")
+	}
 	if len(v) != 8 {
 		return 0, fmt.Errorf("kv head: unexpected %d-byte value", len(v))
 	}
@@ -300,8 +318,10 @@ func getSlotWithRetry(ctx context.Context, st store.Store, slot uint64, retries 
 	return data, found, err
 }
 
-func getWithRetry(ctx context.Context, kv pbkv.KvClient, key string, retries int, logger *zap.Logger) (value []byte, found bool, err error) {
+func getWithRetry(ctx context.Context, kv pbkv.KvClient, key string, timeout time.Duration, retries int, logger *zap.Logger) (value []byte, found bool, err error) {
 	err = retry(ctx, retries, logger, func() error {
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
 		resp, err := kv.Get(ctx, &pbkv.GetRequest{Key: key})
 		if err != nil {
 			if st, ok := status.FromError(err); ok && st.Code() == codes.NotFound {

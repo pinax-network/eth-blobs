@@ -10,7 +10,7 @@ import (
 	_ "github.com/pinax-network/blob-service/blobs/swagger"
 )
 
-//go:generate swag init -g cmd/api.go --output ./swagger --parseDependency --parseDepth 3
+//go:generate swag init -d ../ -g cmd/api.go --output ../swagger --parseDependency --parseDepth 3
 
 //	@title			Ethereum Blobs REST API
 //	@version		1.0

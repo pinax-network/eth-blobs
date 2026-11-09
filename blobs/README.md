@@ -62,9 +62,9 @@ AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... ./blobs api --config config.yaml
 curl -s localhost:8080/health
 curl -s localhost:8080/eth/v1/beacon/blob_sidecars/head | head -c 300
 
-# Sink, following the chain from the last 100 slots (SUBSTREAMS_API_KEY for the public endpoint)
+# Sink, from a recent slot to the head and on (SUBSTREAMS_API_KEY for the public endpoint)
 ./blobs sink eth-cl.substreams.pinax.network:443 \
-    https://github.com/pinax-network/eth-blobs/releases/download/v0.10.0/eth-blobs-v0.10.0.spkg -100: \
+    https://github.com/pinax-network/eth-blobs/releases/download/v0.10.0/eth-blobs-v0.10.0.spkg 15600000: \
     --writer=dc1 \
     --store-url="s3://localhost:9000/blobs-eth?region=none&insecure=true" --metrics-listen-addr=:9102
 
@@ -85,7 +85,8 @@ Sink behaviour worth knowing:
   pending blocks above the last valid one, deletes the orphans it wrote that still hold its block
   (never a block another writer rewrote), republishes its head and saves the undo's cursor.
 - Startup deletes nothing, so restarting one writer never removes blocks another writer wrote.
-- A failed batch write is retried `--flush-retries` times with backoff before the sink exits;
+- Each failed store write (the batch, then the head, then the cursor) is retried `--flush-retries`
+  times with backoff before the sink exits;
   every write is idempotent so a retry is always safe.
 
 Metrics: the substreams-sink library's `head_block_number`, `head_block_time_drift` and

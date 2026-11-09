@@ -29,8 +29,12 @@ func storeURLs(t *testing.T) map[string]string {
 	}
 	srv := httptest.NewServer(gofakes3.New(backend).Server())
 	t.Cleanup(srv.Close)
-	t.Setenv("AWS_ACCESS_KEY_ID", "test")
-	t.Setenv("AWS_SECRET_ACCESS_KEY", "test")
+	// The fake accepts any credentials but the SDK needs some; keep the
+	// operator's when BLOBS_TEST_STORE_URL points at a real store.
+	if os.Getenv("AWS_ACCESS_KEY_ID") == "" {
+		t.Setenv("AWS_ACCESS_KEY_ID", "test")
+		t.Setenv("AWS_SECRET_ACCESS_KEY", "test")
+	}
 	host := strings.TrimPrefix(srv.URL, "http://")
 
 	urls := map[string]string{

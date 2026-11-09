@@ -402,3 +402,39 @@ func TestRangeCompletionSavesLastPendingCursor(t *testing.T) {
 		t.Fatalf("cursor saved at block %d, want 101 (the last block written)", got)
 	}
 }
+
+// A transient failure on the head or cursor write is retried like the batch,
+// in order: batch, then head, then cursor.
+func TestHeadAndCursorWritesAreRetried(t *testing.T) {
+	s, st := newTestSinker(t, Config{FlushRetries: 3})
+	st.FailTimes[store.HeadKey("test")] = 1
+	st.FailTimes[store.CursorKey("test")] = 1
+	feed(t, s, 900, 900, bstream.StepNew, true)
+	if st.CallsFor(store.HeadKey("test")) != 2 || st.CallsFor(store.CursorKey("test")) != 2 {
+		t.Errorf("head/cursor attempts: %d/%d, want 2/2", st.CallsFor(store.HeadKey("test")), st.CallsFor(store.CursorKey("test")))
+	}
+	head, err := st.GetHead(context.Background())
+	if err != nil || head.Slot != 900 {
+		t.Fatalf("head after retried write: %+v err=%v", head, err)
+	}
+	if !st.Has(store.CursorKey("test")) {
+		t.Fatal("cursor must be written after its retry")
+	}
+	if s.lastWritten != 900 {
+		t.Errorf("lastWritten = %d", s.lastWritten)
+	}
+}
+
+// Flushed blocks must not stay reachable through the reused pending slice.
+func TestFlushedPayloadsAreReleased(t *testing.T) {
+	s, _ := newTestSinker(t, Config{BatchSize: 5})
+	feed(t, s, 100, 104, bstream.StepNewIrreversible, false)
+	if len(s.pending) != 0 || cap(s.pending) < 5 {
+		t.Fatalf("pending len=%d cap=%d after the flush", len(s.pending), cap(s.pending))
+	}
+	for i, p := range s.pending[:cap(s.pending)] {
+		if p.data != nil || p.cursor != nil {
+			t.Fatalf("flushed block %d still referenced from the backing array", i)
+		}
+	}
+}

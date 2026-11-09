@@ -8,25 +8,31 @@ import (
 )
 
 // MemStore is an in-memory Store for tests. It records every key touched so
-// tests can assert on call counts, and can be told to fail specific keys.
+// tests can assert on call counts, and can be told to fail specific keys:
+// FailKey fails every operation on a key, FailTimes fails the next n.
 type MemStore struct {
-	mu      sync.Mutex
-	objects map[string][]byte
-	heads   map[string]Head
-	Calls   []string
-	FailKey map[string]error
+	mu        sync.Mutex
+	objects   map[string][]byte
+	heads     map[string]Head
+	Calls     []string
+	FailKey   map[string]error
+	FailTimes map[string]int
 }
 
 var _ Store = (*MemStore)(nil)
 
 func NewMemStore() *MemStore {
-	return &MemStore{objects: map[string][]byte{}, heads: map[string]Head{}, FailKey: map[string]error{}}
+	return &MemStore{objects: map[string][]byte{}, heads: map[string]Head{}, FailKey: map[string]error{}, FailTimes: map[string]int{}}
 }
 
 func (m *MemStore) record(key string) error {
 	m.Calls = append(m.Calls, key)
 	if err, ok := m.FailKey[key]; ok {
 		return err
+	}
+	if n := m.FailTimes[key]; n > 0 {
+		m.FailTimes[key] = n - 1
+		return fmt.Errorf("%s: transient failure", key)
 	}
 	return nil
 }

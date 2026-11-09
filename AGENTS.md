@@ -86,7 +86,7 @@ These rules are what make the design safe; do not weaken them:
    `--undo-buffer-size`. With a buffer the library swallows undo signals, a fork deeper than the
    buffer kills the stream, and on restart the empty buffer swallows the server's undo again, so
    orphans already written would never be cleaned up. Every block is written as it arrives.
-7. **Deletes never touch a valid block, from any writer.** Only two deletes exist:
+7. **Deletes follow this writer's view of the chain and are self-healing.** Only two deletes exist:
    - *Missed slots:* when the stream delivers block S right after block P (or after the cursor's
      block on startup, or the last valid block of an undo), the slots in (P, S) hold no block on
      that chain, so their objects are deleted in S's flush. This removes orphans the new chain has
@@ -99,9 +99,18 @@ These rules are what make the design safe; do not weaken them:
    On undo the sink also drops pending blocks above the last valid one, republishes its head
    there and saves the undo's cursor. Startup deletes nothing. Root objects are left in place:
    the API checks that a slot fetched by root still carries that root and answers `404`
-   otherwise. Between an undo and the new chain's next block, a slot query can still return an
-   orphan another writer has not cleaned yet (seconds).
-8. **A failed batch write is retried whole, then the sink exits.** Every write is idempotent.
+   otherwise.
+
+   During a fork two writers can briefly follow different chains, so one may delete a block the
+   other wrote on the chain that wins (a missed slot on its fork, or its own orphan check racing
+   a refill). The deleting writer then gets an undo and streams the winning chain from the fork
+   point, so it rewrites every block it removed; the cursor never passes a delete that has not
+   happened, so a crash in between replays it. The store converges within the fork's resolution
+   (seconds); until then a slot query can return `404` for a valid block or an orphan another
+   writer has not cleaned yet. Object stores offer no conditional delete that would close this.
+8. **Every store write is retried, then the sink exits.** The batch, the head, the cursor and
+   an undo's deletes are each attempted `--flush-retries` times (default 5, ~3.5 minutes) with
+   quadratic backoff, in that order. Every write and delete is idempotent.
 
 ### Library gotchas
 

@@ -7,8 +7,7 @@
 // fork deeper than the buffer kills the stream and is then swallowed on
 // restart, so nothing would ever clean up what was already written. Instead
 // every block is written as it arrives and the sink keeps the store
-// consistent with the stream with two targeted deletes, neither of which can
-// remove a valid block written by another writer sharing the bucket:
+// consistent with the stream with two targeted deletes:
 //
 //   - Missed slots. When the stream delivers block S right after block P, the
 //     slots in (P, S) hold no block on the chain the stream follows, so any
@@ -18,6 +17,15 @@
 //     deleted only if they still hold the block this process wrote; a slot a
 //     faster writer already refilled with the canonical block is left alone.
 //     Orphans the new chain also has a block for are overwritten by the stream.
+//
+// Both deletes follow this writer's own view of the chain, which during a
+// fork may differ from another writer's. A block another writer wrote on the
+// chain that wins can therefore be deleted for a moment: the deleting writer
+// then receives an undo and streams the winning chain from the fork point, so
+// it rewrites every block it removed. The cursor never moves past a delete
+// that has not happened, so a crash in between replays it the same way. The
+// store converges within the fork's resolution; the object store offers no
+// conditional delete that could close the window itself.
 package sink
 
 import (
@@ -52,8 +60,9 @@ type Config struct {
 	BatchSize int
 	// Parallelism bounds concurrent object writes within a flush.
 	Parallelism int
-	// FlushRetries is how many times a failed batch write is retried before
-	// the sink gives up. Writes are idempotent, so a retry is always safe.
+	// FlushRetries is how many times each failed store write (the batch, the
+	// head, the cursor, an undo's deletes) is attempted before the sink gives
+	// up. Writes and deletes are idempotent, so a retry is always safe.
 	FlushRetries int
 }
 
@@ -238,32 +247,18 @@ func (s *Sinker) flush(ctx context.Context) error {
 	}
 	start := time.Now()
 
-	var err error
-	for attempt := 1; attempt <= s.cfg.FlushRetries; attempt++ {
-		if err = s.writeBatch(ctx, s.pending); err == nil {
-			break
-		}
-		if ctx.Err() != nil {
-			return err
-		}
-		delay := time.Duration(attempt*attempt) * time.Second
-		s.logger.Warn("batch write failed, retrying", zap.Int("attempt", attempt), zap.Duration("in", delay), zap.Error(err))
-		select {
-		case <-time.After(delay):
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
-	if err != nil {
-		return fmt.Errorf("writing batch of %d slots after %d attempts: %w", len(s.pending), s.cfg.FlushRetries, err)
+	if err := s.retry(ctx, fmt.Sprintf("writing batch of %d slots", len(s.pending)), func() error {
+		return s.writeBatch(ctx, s.pending)
+	}); err != nil {
+		return err
 	}
 
 	last := s.pending[len(s.pending)-1]
 	if err := s.publishHead(ctx, last.slot, last.root, last.time); err != nil {
 		return err
 	}
-	if err := s.store.PutCursor(ctx, s.cfg.Writer, last.cursor.String()); err != nil {
-		return fmt.Errorf("writing cursor: %w", err)
+	if err := s.putCursor(ctx, last.cursor); err != nil {
+		return err
 	}
 
 	var blobs, bytes, missed int
@@ -298,8 +293,37 @@ func (s *Sinker) flush(ctx context.Context) error {
 	)
 
 	s.lastWritten = last.slot
+	clear(s.pending) // drop the payload references, keep the backing array
 	s.pending = s.pending[:0]
 	return nil
+}
+
+// retry runs a store write up to FlushRetries times with quadratic backoff.
+// Every store operation the sink performs is idempotent.
+func (s *Sinker) retry(ctx context.Context, what string, fn func() error) error {
+	var err error
+	for attempt := 1; attempt <= s.cfg.FlushRetries; attempt++ {
+		if err = fn(); err == nil {
+			return nil
+		}
+		if ctx.Err() != nil {
+			return err
+		}
+		delay := time.Duration(attempt*attempt) * time.Second
+		s.logger.Warn("store write failed, retrying", zap.String("op", what), zap.Int("attempt", attempt), zap.Duration("in", delay), zap.Error(err))
+		select {
+		case <-time.After(delay):
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	return fmt.Errorf("%s after %d attempts: %w", what, s.cfg.FlushRetries, err)
+}
+
+func (s *Sinker) putCursor(ctx context.Context, cursor *sink.Cursor) error {
+	return s.retry(ctx, "writing cursor", func() error {
+		return s.store.PutCursor(ctx, s.cfg.Writer, cursor.String())
+	})
 }
 
 func (s *Sinker) writeBatch(ctx context.Context, batch []pendingBlock) error {
@@ -328,8 +352,8 @@ func (s *Sinker) publishHead(ctx context.Context, slot uint64, root string, bloc
 	if !blockTime.IsZero() {
 		head.Timestamp = blockTime.Unix()
 	}
-	if err := s.store.PutHead(ctx, s.cfg.Writer, head); err != nil {
-		return fmt.Errorf("writing head: %w", err)
+	if err := s.retry(ctx, "writing head", func() error { return s.store.PutHead(ctx, s.cfg.Writer, head) }); err != nil {
+		return err
 	}
 	HeadSlot.SetUint64(slot)
 	return nil
@@ -353,6 +377,7 @@ func (s *Sinker) HandleBlockUndoSignal(ctx context.Context, undo *pbsubstreamsrp
 			kept = append(kept, p)
 		}
 	}
+	clear(s.pending[len(kept):]) // drop the payloads of the blocks never written
 	s.pending = kept
 	if err := s.flush(ctx); err != nil {
 		return err
@@ -363,8 +388,8 @@ func (s *Sinker) HandleBlockUndoSignal(ctx context.Context, undo *pbsubstreamsrp
 		return fmt.Errorf("undo: %w", err)
 	}
 	if len(orphans) > 0 {
-		if err := s.store.DeleteSlots(ctx, orphans); err != nil {
-			return fmt.Errorf("undo: deleting orphans: %w", err)
+		if err := s.retry(ctx, "undo: deleting orphans", func() error { return s.store.DeleteSlots(ctx, orphans) }); err != nil {
+			return err
 		}
 		SlotsDeleted.AddInt(len(orphans))
 		s.logger.Info("deleted orphaned slots", zap.Uint64("above", lastValid), zap.Uint64s("slots", orphans))
@@ -377,8 +402,8 @@ func (s *Sinker) HandleBlockUndoSignal(ctx context.Context, undo *pbsubstreamsrp
 	if err := s.publishHead(ctx, head.Slot, head.Root, time.Unix(head.Timestamp, 0)); err != nil {
 		return err
 	}
-	if err := s.store.PutCursor(ctx, s.cfg.Writer, cursor.String()); err != nil {
-		return fmt.Errorf("writing cursor after undo: %w", err)
+	if err := s.putCursor(ctx, cursor); err != nil {
+		return err
 	}
 	s.prev, s.havePrev = lastValid, true
 	s.lastWritten = lastValid
