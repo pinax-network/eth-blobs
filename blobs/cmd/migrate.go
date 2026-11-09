@@ -66,7 +66,7 @@ func init() {
 	fs.Int("workers", 16, "Concurrent slot copies")
 	fs.String("writer", "", "Publish head/<writer> for the highest copied slot")
 	fs.Bool("overwrite", false, "Rewrite slots that already exist in the store")
-	fs.Int("retries", 5, "Attempts per KV read or store write before failing")
+	fs.Int("retries", migrate.DefaultRetries, "Attempts per KV read or store read/write before failing; with the default --store-timeout this rides out a ~5 minute store stall")
 	rootCmd.AddCommand(migrateCmd)
 }
 

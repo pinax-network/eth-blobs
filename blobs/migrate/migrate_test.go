@@ -3,8 +3,10 @@ package migrate
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -177,4 +179,65 @@ func TestRerunFixesWrongRoot(t *testing.T) {
 		t.Errorf("report: %+v", r)
 	}
 	requireRoot(t, st, 100)
+}
+
+// flakyStore fails the first read of every slot and root object, like a reset
+// connection or a store busy resharding its index.
+type flakyStore struct {
+	*store.MemStore
+	mu     sync.Mutex
+	failed map[string]bool
+}
+
+func (f *flakyStore) firstReadFails(key string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.failed[key] {
+		return nil
+	}
+	f.failed[key] = true
+	return errors.New("read tcp: connection reset by peer")
+}
+
+func (f *flakyStore) GetSlot(ctx context.Context, slot uint64) ([]byte, error) {
+	if err := f.firstReadFails(store.SlotKey(slot)); err != nil {
+		return nil, err
+	}
+	return f.MemStore.GetSlot(ctx, slot)
+}
+
+func (f *flakyStore) GetRoot(ctx context.Context, root string) (uint64, error) {
+	if err := f.firstReadFails(store.RootKey(root)); err != nil {
+		return 0, err
+	}
+	return f.MemStore.GetRoot(ctx, root)
+}
+
+// A transient read error while checking existing slots and roots is retried,
+// not fatal: a failed run starts its whole range over.
+func TestTransientReadErrorsAreRetried(t *testing.T) {
+	addr := serveKV(t, 102, 100, 101, 102)
+	mem := store.NewMemStore()
+	ctx := context.Background()
+	for slot := uint64(100); slot <= 101; slot++ {
+		if err := mem.PutSlot(ctx, slot, slotBytes(t, slot)); err != nil {
+			t.Fatal(err)
+		}
+		if err := mem.PutRoot(ctx, store.RootHex(rootOf(slot)), slot); err != nil {
+			t.Fatal(err)
+		}
+	}
+	st := &flakyStore{MemStore: mem, failed: map[string]bool{}}
+
+	r, err := Run(ctx, Config{KVAddr: addr, From: 100, To: 102, Writer: "migration", Workers: 2, Retries: 2}, st, zap.NewNop())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Copied != 1 || r.Skipped != 2 || r.Repaired != 0 {
+		t.Errorf("report: %+v", r)
+	}
+	for _, slot := range []uint64{100, 101, 102} {
+		requireRoot(t, mem, slot)
+	}
+	requireHead(t, mem, 102)
 }

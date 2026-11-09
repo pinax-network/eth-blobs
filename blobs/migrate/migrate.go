@@ -25,6 +25,13 @@ import (
 	"github.com/pinax-network/blob-service/blobs/store"
 )
 
+// DefaultRetries is how many times a KV read or store operation is attempted.
+// Any failure that outlasts it aborts the run, which then starts its range
+// over, so it is sized to ride out an object-store stall of several minutes
+// (an S3 gateway resharding a large bucket's index blocks its writes): with the
+// quadratic backoff and a 30s operation timeout, 8 attempts span ~5 minutes.
+const DefaultRetries = 8
+
 type Config struct {
 	// KVAddr is the substreams-sink-kv serve gRPC address.
 	KVAddr string
@@ -66,7 +73,7 @@ func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*
 		cfg.Workers = 16
 	}
 	if cfg.Retries <= 0 {
-		cfg.Retries = 5
+		cfg.Retries = DefaultRetries
 	}
 
 	conn, err := grpc.NewClient(cfg.KVAddr,
@@ -148,8 +155,11 @@ func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*
 		g.Go(func() error {
 			for slot := range slots {
 				if !cfg.Overwrite {
-					existing, err := st.GetSlot(gctx, slot)
-					if err == nil {
+					existing, exists, err := getSlotWithRetry(gctx, st, slot, cfg.Retries, logger)
+					if err != nil {
+						return fmt.Errorf("checking slot %d: %w", slot, err)
+					}
+					if exists {
 						fixed, err := ensureIndexed(gctx, st, slot, existing, cfg.Retries, logger, noteHigh)
 						if err != nil {
 							return err
@@ -159,9 +169,6 @@ func Run(ctx context.Context, cfg Config, st store.Store, logger *zap.Logger) (*
 						}
 						skipped.Add(1)
 						continue
-					}
-					if !errors.Is(err, store.ErrNotFound) {
-						return fmt.Errorf("checking slot %d: %w", slot, err)
 					}
 				}
 				value, found, err := getWithRetry(gctx, kv, fmt.Sprintf("slot:%d", slot), cfg.Retries, logger)
@@ -232,17 +239,25 @@ func ensureIndexed(ctx context.Context, st store.Store, slot uint64, data []byte
 		return false, fmt.Errorf("existing slot object %d carries slot %d", slot, pb.Slot)
 	}
 	root := store.RootHex(pb.Root)
+	var indexed uint64
+	found := true
+	if err := retry(ctx, retries, logger, func() error {
+		var err error
+		indexed, err = st.GetRoot(ctx, root)
+		if errors.Is(err, store.ErrNotFound) {
+			found = false
+			return nil
+		}
+		return err
+	}); err != nil {
+		return false, fmt.Errorf("checking root of slot %d: %w", slot, err)
+	}
 	fixed := false
-	indexed, err := st.GetRoot(ctx, root)
-	switch {
-	case err == nil && indexed == slot:
-	case err == nil || errors.Is(err, store.ErrNotFound):
+	if !found || indexed != slot {
 		if err := retry(ctx, retries, logger, func() error { return st.PutRoot(ctx, root, slot) }); err != nil {
 			return false, fmt.Errorf("repairing root of slot %d: %w", slot, err)
 		}
 		fixed = true
-	default:
-		return false, fmt.Errorf("checking root of slot %d: %w", slot, err)
 	}
 	var ts int64
 	if pb.Timestamp != nil {
@@ -266,6 +281,23 @@ func kvHead(ctx context.Context, kv pbkv.KvClient) (uint64, error) {
 		head = head<<8 | uint64(b)
 	}
 	return head, nil
+}
+
+// getSlotWithRetry reads a slot already in the store. A missing slot is an
+// answer, not a failure; anything else (a reset connection, a timeout while the
+// backend is busy) is retried, since giving up restarts the whole range.
+func getSlotWithRetry(ctx context.Context, st store.Store, slot uint64, retries int, logger *zap.Logger) (data []byte, found bool, err error) {
+	err = retry(ctx, retries, logger, func() error {
+		var err error
+		data, err = st.GetSlot(ctx, slot)
+		if errors.Is(err, store.ErrNotFound) {
+			found = false
+			return nil
+		}
+		found = err == nil
+		return err
+	})
+	return data, found, err
 }
 
 func getWithRetry(ctx context.Context, kv pbkv.KvClient, key string, retries int, logger *zap.Logger) (value []byte, found bool, err error) {

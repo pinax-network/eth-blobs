@@ -114,7 +114,11 @@ These rules are what make the design safe; do not weaken them:
   repairs their root object and counts them towards the head; it treats a KV `NotFound` as a
   missed slot, and publishes `head/<writer>` only when `--writer` is given. Omit `--writer` when
   backfilling below a live writer's head. KV keys are `slot:<n>` without padding, so it reads
-  per key rather than scanning.
+  per key rather than scanning. It keeps no progress: a run that fails starts its range over,
+  checking every slot already copied. So every KV and store operation, reads included, is
+  retried (`--retries`, default 8, ~5 minutes with the 30s `--store-timeout`). An S3 gateway
+  resharding a large bucket's index blocks writes to it for minutes. After a failure, rerun from
+  just below the last progress line rather than from the original start.
 - dstore is used with no extension, no compression and overwrite on (`store.Open`). Keep
   overwrite on: with it off, dstore silently skips writes to existing keys, so heads and cursors
   would stop advancing. Each dstore write does a HEAD before the PUT, and deletes go one object at a
