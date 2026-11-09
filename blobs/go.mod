@@ -22,7 +22,6 @@ require (
 	github.com/streamingfast/logging v0.0.0-20260108192805-38f96de0a641
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/substreams v1.18.2
-	github.com/streamingfast/substreams-sink v0.5.11
 	github.com/streamingfast/substreams-sink-kv v0.1.3-0.20240214210842-435682b6b7f2
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
@@ -83,8 +82,8 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.12.0 // indirect
 	github.com/blendle/zapdriver v1.3.2-0.20200203083823-9200777f8a3d // indirect
+	github.com/bobg/go-generics/v2 v2.2.2 // indirect
 	github.com/bobg/go-generics/v3 v3.5.0 // indirect
-	github.com/bobg/go-generics/v4 v4.1.2 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
@@ -221,5 +220,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/streamingfast/substreams-sink => github.com/pinax-network/substreams-sink-go v0.5.11

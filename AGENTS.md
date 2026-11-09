@@ -43,7 +43,7 @@ module is `github.com/pinax-network/blob-service/blobs`; the image is
 | `blobs migrate-kv <kv-serve-addr> [<from>:<to>]` | copy slots out of a legacy `substreams-sink-kv serve` |
 
 Packages: `store/` (object layout on top of dstore, in-memory test store), `sink/` (the handler on top
-of the substreams-sink library), `migrate/`, `cmd/` (cobra), and the API packages
+of the Substreams sink library), `migrate/`, `cmd/` (cobra), and the API packages
 `controllers/`, `services/`, `dto/`, `server/`, `config/`, `swagger/`.
 
 ### Object layout and invariants
@@ -116,8 +116,15 @@ These rules are what make the design safe; do not weaken them:
 
 ### Library gotchas
 
-- `github.com/streamingfast/substreams-sink` is replaced by the Pinax fork
-  `github.com/pinax-network/substreams-sink-go` in `go.mod`; keep the `replace`.
+- The sink library is `github.com/streamingfast/substreams/sink`, part of the `substreams`
+  module. The standalone `github.com/streamingfast/substreams-sink` is deprecated upstream; do not
+  go back to it. `blobs sink` leaves out two of the library's flags: `--undo-buffer-size` (rule 6)
+  and `--prometheus-addr`, whose server (`localhost:9102` by default) would collide with
+  `--metrics-listen-addr`; that one serves the library's metrics once `sink.Metrics.Register()`
+  has run, and the drift alert reads `head_block_time_drift` from it. It redefines
+  `--max-retries` with a default of 15 (about 5 minutes of backoff) instead of the library's 3.
+  The endpoint and range arguments are copied into the library's hidden `--endpoint`,
+  `--start-block` and `--stop-block`.
 - The library's range-completion callback passes the last cursor *received*; the sink ignores it
   and saves the cursor of the last block it wrote. A bounded `A:B` run writes slots A..B-1.
   Production runs are unbounded.

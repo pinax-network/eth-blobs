@@ -2,15 +2,18 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/streamingfast/cli"
 	"github.com/streamingfast/cli/sflags"
 	"github.com/streamingfast/shutter"
-	sink "github.com/streamingfast/substreams-sink"
+	sink "github.com/streamingfast/substreams/sink"
 	"go.uber.org/zap"
 
+	"github.com/pinax-network/blob-service/blobs/flags"
 	blobsink "github.com/pinax-network/blob-service/blobs/sink"
 )
 
@@ -26,7 +29,7 @@ store, plus the block-root index and this writer's head and cursor objects.
 
 Several sinks (one per DC) may write the same bucket as long as each uses its own --writer:
 slot and root objects are identical for a given block, and head and cursor are per writer.
-Authentication uses SUBSTREAMS_API_TOKEN when the endpoint needs it.
+Authentication uses SUBSTREAMS_API_KEY or SUBSTREAMS_API_TOKEN when the endpoint needs it.
 
 Reorgs are handled here, not by the library: there is no --undo-buffer-size. Every block is
 written as it arrives; on an undo the sink deletes the orphans it wrote and republishes its
@@ -41,17 +44,53 @@ head, and slots the stream skips (no block on the chain) have their objects dele
 }
 
 func init() {
-	fs := sinkCmd.Flags()
-	// No undo buffer: with one, the library swallows undo signals (and a deeper fork is
-	// swallowed again on restart), so orphans already written would never be cleaned up.
-	sink.AddFlagsToSet(fs, sink.FlagIgnore(sink.FlagUndoBufferSize))
+	addSinkFlags(sinkCmd.Flags())
+	rootCmd.AddCommand(sinkCmd)
+}
+
+func addSinkFlags(fs *pflag.FlagSet) {
+	sink.AddFlagsToSet(fs, sink.FlagExcludeDefault(
+		// No undo buffer: with one, the library swallows undo signals (and a deeper fork is
+		// swallowed again on restart), so orphans already written would never be cleaned up.
+		sink.FlagUndoBufferSize,
+		// The library would serve its own metrics endpoint (localhost:9102 by default), which
+		// collides with --metrics-listen-addr; that one serves the library's metrics too.
+		sink.FlagPrometheusAddr,
+		// Redefined below with a longer default.
+		sink.FlagMaxRetries,
+	))
+	// The library reads the endpoint and the block range from these flags; they are set from
+	// the arguments.
+	for _, name := range []string{sink.FlagEndpoint, sink.FlagStartBlock, sink.FlagStopBlock} {
+		_ = fs.MarkHidden(name)
+	}
+	fs.Int(sink.FlagMaxRetries, 15, "Consecutive failed Substreams connection attempts before the sink exits (exponential backoff, about 5 minutes for 15; -1 retries forever). The count resets when data arrives")
 	addStoreFlags(fs)
 	fs.String("writer", "", "Writer id naming this sink's head and cursor objects, e.g. riv or kan (required)")
 	fs.String("module", blobsink.OutputModuleName, "Output module to stream")
 	fs.Int("batch-size", 200, "Blocks per flush while catching up; live blocks flush one by one")
 	fs.Int("parallelism", 16, "Concurrent object writes within a flush")
 	fs.Int("flush-retries", 5, "Attempts for each failed store write (batch, head, cursor) before the sink exits")
-	rootCmd.AddCommand(sinkCmd)
+}
+
+// setBlockRange maps the [<start>]:[<stop>] argument onto the library's
+// --start-block and --stop-block. A bare number is a stop block, as before.
+func setBlockRange(fs *pflag.FlagSet, blockRange string) error {
+	start, stop, hasColon := strings.Cut(blockRange, ":")
+	if !hasColon {
+		start, stop = "", blockRange
+	}
+	if start != "" {
+		if err := fs.Set(sink.FlagStartBlock, start); err != nil {
+			return fmt.Errorf("block range %q: %w", blockRange, err)
+		}
+	}
+	if stop != "" {
+		if err := fs.Set(sink.FlagStopBlock, stop); err != nil {
+			return fmt.Errorf("block range %q: %w", blockRange, err)
+		}
+	}
+	return nil
 }
 
 func runSink(cmd *cobra.Command, args []string) error {
@@ -59,9 +98,13 @@ func runSink(cmd *cobra.Command, args []string) error {
 	app := shutter.New()
 
 	endpoint, manifest := args[0], args[1]
-	blockRange := ""
+	if err := cmd.Flags().Set(sink.FlagEndpoint, endpoint); err != nil {
+		return fmt.Errorf("endpoint: %w", err)
+	}
 	if len(args) == 3 {
-		blockRange = args[2]
+		if err := setBlockRange(cmd.Flags(), args[2]); err != nil {
+			return err
+		}
 	}
 
 	cfg := blobsink.Config{
@@ -74,7 +117,10 @@ func runSink(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--writer is required")
 	}
 
-	sink.RegisterMetrics()
+	// The library registers its metrics (head_block_time_drift and friends, which
+	// the drift alert reads) only when it serves them itself on --prometheus-addr,
+	// which blobs does not register; --metrics-listen-addr serves them instead.
+	sink.Metrics.Register()
 	blobsink.RegisterMetrics()
 
 	st, err := storeFromFlags(cmd)
@@ -83,7 +129,7 @@ func runSink(cmd *cobra.Command, args []string) error {
 	}
 
 	baseSinker, err := sink.NewFromViper(cmd, blobsink.OutputModuleType,
-		endpoint, manifest, sflags.MustGetString(cmd, "module"), blockRange,
+		manifest, sflags.MustGetString(cmd, "module"), "blobs/"+flags.GetVersion(),
 		zlog, tracer,
 	)
 	if err != nil {

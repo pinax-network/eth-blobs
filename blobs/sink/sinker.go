@@ -36,8 +36,8 @@ import (
 
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/shutter"
-	sink "github.com/streamingfast/substreams-sink"
 	pbsubstreamsrpc "github.com/streamingfast/substreams/pb/sf/substreams/rpc/v2"
+	sink "github.com/streamingfast/substreams/sink"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
