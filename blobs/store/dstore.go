@@ -136,12 +136,23 @@ func (s *DStore) put(ctx context.Context, key string, data []byte) error {
 	return nil
 }
 
+// GetSlot returns the serialized Slot, decompressing the stored object (see
+// slotcodec.go).
 func (s *DStore) GetSlot(ctx context.Context, slot uint64) ([]byte, error) {
-	return s.get(ctx, SlotKey(slot))
+	stored, err := s.get(ctx, SlotKey(slot))
+	if err != nil {
+		return nil, err
+	}
+	raw, err := DecodeSlot(stored)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", SlotKey(slot), err)
+	}
+	return raw, nil
 }
 
+// PutSlot stores a serialized Slot as a zstd frame.
 func (s *DStore) PutSlot(ctx context.Context, slot uint64, data []byte) error {
-	return s.put(ctx, SlotKey(slot), data)
+	return s.put(ctx, SlotKey(slot), EncodeSlot(data))
 }
 
 func (s *DStore) DeleteSlots(ctx context.Context, slots []uint64) error {

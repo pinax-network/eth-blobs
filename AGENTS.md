@@ -57,7 +57,7 @@ from each backend's standard environment, never from flags or config.
 Keys inside the store URL (a bucket or directory, optionally with a prefix):
 
 ```text
-slots/<slot>.pb     serialized pinax.ethereum.blobs.v1.Slot, one per beacon block
+slots/<slot>.pb     zstd frame of the serialized pinax.ethereum.blobs.v1.Slot, one per beacon block
 roots/0x<root>      decimal slot number of the block with that root
 head/<writer>       JSON {slot, root, timestamp, writer}: newest slot <writer> fully wrote
 cursor/<writer>     the writer's opaque Substreams cursor
@@ -65,9 +65,13 @@ cursor/<writer>     the writer's opaque Substreams cursor
 
 These rules are what make the design safe; do not weaken them:
 
-1. **A slot object is the raw `map_blobs` output, untouched.** It is byte-identical to the value
-   the legacy KV sink stored under `slot:<n>`, which is why `migrate-kv` copies without
-   transforming and why writers can overwrite each other harmlessly. The API decodes it.
+1. **A slot object is the raw `map_blobs` output, zstd-compressed and otherwise untouched.**
+   Decompressed it is byte-identical to the value the legacy KV sink stored under `slot:<n>`,
+   which is why `migrate-kv` copies without transforming and why writers can overwrite each other
+   harmlessly. Only slot objects are compressed (`store/slotcodec.go`, fastest level: blobs are
+   often zero-padded, ~20% saved on mainnet, and higher levels gain nothing). Objects written
+   before compression are raw; `store.DecodeSlot` tells them apart by the zstd frame header
+   (`28 b5 2f fd`), which a serialized `Slot` can never start with. The API decodes the `Slot`.
 2. **Every beacon block gets a slot object, blobs or not.** Beacon API semantics: `200` with an
    empty list for a block without blobs, `404` only for an unknown block.
 3. **Write order within a flush is slots, roots and missed-slot deletes, then head, then the

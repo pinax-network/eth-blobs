@@ -5,7 +5,7 @@
 //
 // Layout inside the store URL (a bucket or directory, optionally with a prefix):
 //
-//	slots/<slot>.pb     the serialized pinax.ethereum.blobs.v1.Slot, one per
+//	slots/<slot>.pb     zstd frame of the serialized pinax.ethereum.blobs.v1.Slot, one per
 //	                    beacon block, including blocks that carry no blobs
 //	roots/0x<root>      decimal slot number of the block with that root
 //	head/<writer>       JSON Head of the newest slot <writer> has written

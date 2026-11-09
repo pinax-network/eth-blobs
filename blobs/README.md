@@ -29,7 +29,7 @@ config file. For `s3://` the binary defaults `AWS_REQUEST_CHECKSUM_CALCULATION` 
 ## Object layout
 
 ```
-slots/<slot>.pb     serialized pinax.ethereum.blobs.v1.Slot, one per beacon block (also for blocks without blobs)
+slots/<slot>.pb     zstd frame of the serialized pinax.ethereum.blobs.v1.Slot, one per beacon block (also for blocks without blobs)
 roots/0x<root>      decimal slot number of the block with that root
 head/<writer>       JSON {slot, root, timestamp, writer}: the newest slot <writer> has fully written
 cursor/<writer>     the writer's opaque Substreams cursor

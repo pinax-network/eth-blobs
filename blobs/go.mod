@@ -8,6 +8,7 @@ require (
 	github.com/gin-contrib/zap v1.1.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/johannesboyne/gofakes3 v1.2.0
+	github.com/klauspost/compress v1.18.3
 	github.com/pinax-network/golang-base v0.0.0-20240306170037-5dce44191aa3
 	github.com/pinax-network/golang-base/log v0.0.0-20240306170037-5dce44191aa3
 	github.com/spf13/cobra v1.10.2
@@ -130,7 +131,6 @@ require (
 	github.com/jhump/protoreflect v1.14.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
